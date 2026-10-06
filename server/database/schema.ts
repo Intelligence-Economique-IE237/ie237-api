@@ -66,17 +66,7 @@ export const subscribers = pgTable("subscribers", {
   last_newsletter_sent: timestamp("last_newsletter_sent", { mode: "string" }),
 })
 
-// -----------------------------------------------------
-// API Keys Table (Issue #1: Foundation)
-// -----------------------------------------------------
 
-export const apiKeys = pgTable("api_keys", {
-  id: serial("id").primaryKey(),
-  key: text("key").notNull().unique(), // Raw key - in production, hash this!
-  permissions: text("permissions"),
-  created_at: timestamp("created_at", { mode: "string" }).notNull().defaultNow(),
-  expires_at: timestamp("expires_at", { mode: "string" }),
-})
 
 // -----------------------------------------------------
 // RSS Feeds Table (for later phases)
@@ -185,10 +175,7 @@ export const newsletterLogs = pgTable("newsletter_logs", {
 
 export type Content = typeof content.$inferSelect
 export type Subscribers = typeof subscribers.$inferSelect
-export type ApiKeys = typeof apiKeys.$inferSelect
 export type RssFeeds = typeof rssFeeds.$inferSelect
-export type RssApprovals = typeof rssApprovals.$inferSelect
-export type CleanupLog = typeof cleanupLog.$inferSelect
 export type AnalyticsEvents = typeof analyticsEvents.$inferSelect
 export type HealthChecks = typeof healthChecks.$inferSelect
 export type Subscriptions = typeof subscriptions.$inferSelect
