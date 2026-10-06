@@ -7,14 +7,14 @@ const rssItems = [
 		id: "item-1",
 		title: "Sample Article 1",
 		description: "This is a sample RSS item description",
-	 link: "https://ie237-api.example.com/articles/1",
+		label: "https://ie237-api.example.com/articles/1",
 		pubDate: new Date(),
 	},
 	{
 		id: "item-2",
 		title: "Sample Article 2",
 		description: "This is another sample RSS item description",
-	 link: "https://ie237-api.example.com/articles/2",
+		label: "https://ie237-api.example.com/articles/2",
 		pubDate: new Date(),
 	},
 ]
@@ -36,7 +36,7 @@ function objectToRssXml(items) {
       <id>${item.id}</id>
       <title>${item.title}</title>
       <description>${item.description}</description>
-      <link>${item.link}</link>
+      <link>${item.label}</link>
       <pubDate>${pubDateToString(item.pubDate)}</pubDate>
     </item>`
 		)
