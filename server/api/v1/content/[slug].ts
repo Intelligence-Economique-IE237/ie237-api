@@ -1,6 +1,7 @@
 import { defineHandler, HTTPError } from "nitro";
 import { prettifyError, z } from "zod";
 import { createError, getValidatedRouterParams } from "nitro/h3";
+import { defineRouteMeta } from "nitro";
 
 // Schema for URL parameter validation
 const slugSchema = z.object({
@@ -44,4 +45,66 @@ export default defineHandler(async (event) => {
 		success: true,
 		data: mockContent,
 	};
-});
+}, defineRouteMeta({
+	openAPI: {
+		method: "GET",
+		tags: ["Content"],
+		summary: "View single content item by slug",
+		parameters: [
+			{
+				name: "slug",
+				in: "path",
+				required: true,
+				schema: {
+					type: "string",
+					minLength: 1,
+					pattern: "^[a-z0-9]+(?:[_-]?[a-z0-9]+)*$",
+				},
+			description: "Content slug identifier",
+			},
+		],
+		responses: {
+			200: {
+			description: "Content item retrieved successfully",
+				content: {
+					"application/json": {
+						schema: {
+							type: "object",
+							properties: {
+								success: { type: "boolean" },
+								data: {
+									type: "object",
+									properties: {
+										id: { type: "integer" },
+										title: { type: "string" },
+										slug: { type: "string" },
+										type: { type: "string" },
+										status: { type: "string" },
+										content: { type: "string" },
+										excerpt: { type: "string" },
+										created_at: { type: "string", format: "date-time" },
+										updated_at: { type: "string", format: "date-time" },
+									},
+								},
+							},
+							required: ["success", "data"],
+						},
+					},
+				},
+			},
+			400: {
+			description: "Invalid slug parameter",
+				content: {
+					"application/json": {
+						schema: {
+							type: "object",
+							properties: {
+								message: { type: "string" },
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+}))

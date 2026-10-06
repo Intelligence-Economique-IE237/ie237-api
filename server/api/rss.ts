@@ -1,4 +1,5 @@
 import { defineHandler } from "nitro"
+import { defineRouteMeta } from "nitro"
 
 export default defineHandler((event) => {
   // Mock RSS feed data - will be replaced with real implementation
@@ -34,4 +35,49 @@ export default defineHandler((event) => {
     // - Support pagination/filtering
     // - Generate dynamic feed from actual content
   }
-})
+}, defineRouteMeta({
+	openAPI: {
+		method: "GET",
+		tags: ["RSS"],
+		summary: "Get RSS feed data",
+		description: "Retrieve RSS feed data for the IE237 API",
+		responses: {
+			200: {
+			description: "RSS feed data retrieved successfully",
+				content: {
+					"application/json": {
+						schema: {
+							type: "object",
+							properties: {
+								status: { type: "string" },
+								data: {
+									type: "object",
+									properties: {
+										id: { type: "string" },
+										title: { type: "string" },
+										description: { type: "string" },
+										link: { type: "string" },
+										items: {
+											type: "array",
+											items: {
+												type: "object",
+												properties: {
+													id: { type: "string" },
+													title: { type: "string" },
+													description: { type: "string" },
+													link: { type: "string" },
+													pubDate: { type: "string", format: "date-time" },
+												},
+											},
+										},
+									},
+								},
+							},
+							required: ["status", "data"],
+						},
+					},
+				},
+			},
+		},
+	},
+}))
