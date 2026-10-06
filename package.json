@@ -16,6 +16,8 @@
     "typescript": "latest"
   },
   "dependencies": {
-    "drizzle-orm": "1.0.0-rc.4"
+    "drizzle-orm": "1.0.0-rc.4",
+    "pg": "^8.23.1",
+    "ulid": "^3.0.2"
   }
 }
