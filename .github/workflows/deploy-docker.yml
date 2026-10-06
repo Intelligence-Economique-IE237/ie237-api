@@ -17,7 +17,7 @@ permissions:
 
 env:
   # 📌 Image name format: ghcr.io/OWNER/REPO
-  IMAGE_NAME: ghcr.io/Intelligence-Economique-IE237/ie237-api
+  IMAGE_NAME: ghcr.io/ie237/ie237-api
   # 📌 Use semantic versioning or fixed tag
   IMAGE_TAG: latest
   # 📌 Coolify deployment settings
