@@ -2,7 +2,7 @@ import { defineHandler } from "nitro"
 
 // GET /api/content/:slug - View single content item
 export default defineHandler(async (event) => {
-  const { slug } = event.params
+  const { slug } = await validateRouter 
 
   // TODO: Fetch from database using drizzle ORM
   // const { data } = await db.select().from(content).where(sql.eq(content.slug, slug))

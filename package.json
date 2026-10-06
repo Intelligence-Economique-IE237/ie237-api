@@ -4,7 +4,9 @@
   "scripts": {
     "build": "nitro build",
     "dev": "nitro dev",
-    "preview": "nitro preview"
+    "preview": "nitro preview",
+    "migrate.dev": "drizzle-kit generate && drizzle-kit migrate",
+    "migrate.prod": "drizzle-kit migrate"
   },
   "imports": {
     "#*": "./*"

@@ -23,8 +23,12 @@ export default defineConfig({
 		},
 	},
 	routeRules: {
-		'/api/v1/**': {cors: true, headers: {
-			'access-control-allow-methods': 'GET, PUT, POST, DELETE, PATCH, OPTIONS'
-		}}
-	}
+		"/api/v1/**": {
+			cors: true,
+			headers: {
+				"access-control-allow-methods":
+					"GET, PUT, POST, DELETE, PATCH, OPTIONS",
+			},
+		},
+	},
 });
