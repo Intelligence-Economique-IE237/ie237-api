@@ -5,6 +5,8 @@ on:
     branches: [ master, main ]
   pull_request:
     branches: [ master, main ]
+    types:
+      - closed
   workflow_dispatch:
 
 # 📦 Permissions for GHCR and Coolify deployment
@@ -30,19 +32,9 @@ jobs:
       packages: write
 
     steps:
-      - 📦 name: Checkout repository
+      - name: 📦Checkout repository
         uses: actions/checkout@v4
-
-      - 🔧 name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - 📦 name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - 🔨 name: Build Docker image
+      - name: 🔨Build Docker image
         run: |
           docker build \
             --file Dockerfile \
@@ -50,19 +42,19 @@ jobs:
             --tag ${IMAGE_NAME}:${GITHUB_SHA::7} \
             .
 
-      - 🔐 name: Log in to GHCR
+      - name: 🔐 Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - 📤 name: Push Docker image to GHCR
+      - name: 📤 Push Docker image to GHCR
         run: |
           docker push ${IMAGE_NAME}:${IMAGE_TAG}
           docker push ${IMAGE_NAME}:${GITHUB_SHA::7}
 
-      - 🎯 name: Output image URLs
+      - name: 🎯 Output image URLs
         run: |
           echo "Image published to: ${IMAGE_NAME}:${IMAGE_TAG}"
           echo "Image digest: $(docker inspect ${IMAGE_NAME}:${IMAGE_TAG} --format='{{index .RepoDigests 0}}')"
@@ -77,10 +69,10 @@ jobs:
       id-token: write
 
     steps:
-      - 📦 name: Checkout repository
+      - name: 📦 Checkout repository
         uses: actions/checkout@v4
 
-      - 🔐 name: Install Coolify CLI (or use API)
+      - name: 🔐 Install Coolify CLI (or use API)
         run: |
           # Coolify can be deployed via API or CLI
           # This step is configuration - see Coolify docs for CLI setup
@@ -90,7 +82,7 @@ jobs:
           echo "  - Environment vars should be set in Coolify dashboard"
           echo "  - Add GHCR registry to Coolify authorized registrations"
 
-      - 📡 name: Trigger Coolify deployment
+      - name: 📡 Trigger Coolify deployment
         # Note: Coolify can be triggered via:
         # 1. API call: curl -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" ...
         # 2. Webhook: Configure Coolify webhook in repository settings
@@ -103,7 +95,7 @@ jobs:
           echo "  4. Set environment variables in Coolify UI"
           echo "  5. Or use Coolify API: curl -X POST https://api.coolify.io/v1/apps/${COOLIFY_APP_NAME}/deploy"
 
-      - ✅ name: Deployment complete
+      - name: ✅ Deployment complete
         run: |
           echo "🚀 Docker image ${IMAGE_NAME}:${IMAGE_TAG} is ready for Coolify deployment"
           echo "📋 Remember to set these env vars in Coolify:"

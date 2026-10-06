@@ -21,3 +21,7 @@ Refer to `node_modules/nitro/dist/docs/README.md` when working on server (your k
 **Note**: DO NOT DO THE FOLLOWING
 - Access environment variable files (e.g. **.env...**). Instead use `.env.example` to lookup environment variable names.
 - Access file paths mentioned in the .gitignore file.
+
+## Context
+- Visit the `.github/issues` directory to find out about the different features and roadmap.
+- Visit the `docs` directory to find out about the system design, to understand the project
