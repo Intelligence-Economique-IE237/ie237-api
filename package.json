@@ -1,0 +1,21 @@
+{
+  "name": "nitro-starter",
+  "type": "module",
+  "scripts": {
+    "build": "nitro build",
+    "dev": "nitro dev",
+    "preview": "nitro preview"
+  },
+  "imports": {
+    "#*": "./*"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "drizzle-kit": "1.0.0-rc.4",
+    "nitro": "latest",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "drizzle-orm": "1.0.0-rc.4"
+  }
+}

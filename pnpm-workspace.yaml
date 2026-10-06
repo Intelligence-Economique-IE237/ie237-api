@@ -1,0 +1,7 @@
+allowBuilds:
+  esbuild: set this to true or false
+supportedArchitectures:
+  cpu:
+    - current
+  os:
+    - current
