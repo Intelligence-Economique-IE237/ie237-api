@@ -4,15 +4,15 @@
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | ULID(26) | Primary key, ULID format (uppercase, 26-char string), generated application-side |
 | `title` | TEXT | Content title |
 | `slug` | TEXT | URL-friendly identifier (unique) |
 | `type` | TEXT | `'news'` or `'blog'` |
 | `status` | TEXT | `'draft'` or `'published'` |
 | `content` | TEXT | Full content body |
 | `excerpt` | TEXT | Short summary (for listings/feeds) |
-| `created_at` | TIMESTAMP | Auto-created |
-| `updated_at` | TIMESTAMP | Auto-updated |
+| `created_at` | TIMESTAMPTZ | Timezone-aware timestamp, auto-created in ISO 8601 format |
+| `updated_at` | TIMESTAMPTZ | Timezone-aware timestamp, auto-updated on row change |
 
 ## RSS Feeds Table
 
@@ -29,13 +29,13 @@
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | ULID(26) | Primary key, ULID format (uppercase, 26-char string), generated application-side |
 | `email` | TEXT | Email address (unique) |
 | `status` | TEXT | `'active'`, `'unsubscribed'`, `'pending'` |
 | `preferences_json` | JSON | Topic preferences (e.g., `["technology", "sports"]`) |
-| `created_at` | TIMESTAMP | Subscription date |
-| `unsubscribed_at` | TIMESTAMP | When unsubscribed |
-| `last_newsletter_sent` | TIMESTAMP | Last newsletter delivery |
+| `created_at` | TIMESTAMPTZ | Timezone-aware timestamp, subscription date |
+| `unsubscribed_at` | TIMESTAMPTZ | Timezone-aware timestamp, when unsubscribed |
+| `last_newsletter_sent` | TIMESTAMPTZ | Timezone-aware timestamp, last newsletter delivery |
 
 ## Cleanup Policy
 

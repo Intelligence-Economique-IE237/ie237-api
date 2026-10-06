@@ -4,7 +4,9 @@
   "scripts": {
     "build": "nitro build",
     "dev": "nitro dev",
-    "preview": "nitro preview"
+    "preview": "nitro preview",
+    "migrate.dev": "drizzle-kit generate && drizzle-kit migrate",
+    "migrate.prod": "drizzle-kit migrate"
   },
   "imports": {
     "#*": "./*"
@@ -16,6 +18,10 @@
     "typescript": "latest"
   },
   "dependencies": {
-    "drizzle-orm": "1.0.0-rc.4"
+    "dotenv": "^18.0.5",
+    "drizzle-orm": "1.0.0-rc.4",
+    "pg": "^8.23.1",
+    "ulid": "^3.0.2",
+    "zod": "^4.6.5"
   }
 }
