@@ -1,0 +1,113 @@
+name: 🐳 Docker CI/CD - Build and Release to GHCR
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+# 📦 Permissions for GHCR and Coolify deployment
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  # 📌 Image name format: ghcr.io/OWNER/REPO
+  IMAGE_NAME: ghcr.io/Intelligence-Economique-IE237/ie237-api
+  # 📌 Use semantic versioning or fixed tag
+  IMAGE_TAG: latest
+  # 📌 Coolify deployment settings
+  COOLIFY_APP_NAME: ie237-api
+
+jobs:
+  # 🔨 Build and push Docker image to GHCR
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - 📦 name: Checkout repository
+        uses: actions/checkout@v4
+
+      - 🔧 name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - 📦 name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - 🔨 name: Build Docker image
+        run: |
+          docker build \
+            --file Dockerfile \
+            --tag ${IMAGE_NAME}:${IMAGE_TAG} \
+            --tag ${IMAGE_NAME}:${GITHUB_SHA::7} \
+            .
+
+      - 🔐 name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - 📤 name: Push Docker image to GHCR
+        run: |
+          docker push ${IMAGE_NAME}:${IMAGE_TAG}
+          docker push ${IMAGE_NAME}:${GITHUB_SHA::7}
+
+      - 🎯 name: Output image URLs
+        run: |
+          echo "Image published to: ${IMAGE_NAME}:${IMAGE_TAG}"
+          echo "Image digest: $(docker inspect ${IMAGE_NAME}:${IMAGE_TAG} --format='{{index .RepoDigests 0}}')"
+
+  # 🚀 Deploy to Coolify (optional - can be separate workflow)
+  deploy-to-coolify:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - 📦 name: Checkout repository
+        uses: actions/checkout@v4
+
+      - 🔐 name: Install Coolify CLI (or use API)
+        run: |
+          # Coolify can be deployed via API or CLI
+          # This step is configuration - see Coolify docs for CLI setup
+          echo "📋 Coolify deployment configuration:"
+          echo "  - App Name: ${COOLIFY_APP_NAME}"
+          echo "  - Image: ${IMAGE_NAME}:${IMAGE_TAG}"
+          echo "  - Environment vars should be set in Coolify dashboard"
+          echo "  - Add GHCR registry to Coolify authorized registrations"
+
+      - 📡 name: Trigger Coolify deployment
+        # Note: Coolify can be triggered via:
+        # 1. API call: curl -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" ...
+        # 2. Webhook: Configure Coolify webhook in repository settings
+        # 3. Manual: Use Coolify dashboard to deploy new image
+        run: |
+          echo "ℹ️  To deploy to Coolify:"
+          echo "  1. Go to Coolify dashboard → ${COOLIFY_APP_NAME}"
+          echo "  2. Click 'Deploy'"
+          echo "  3. Select image: ${IMAGE_NAME}:${IMAGE_TAG}"
+          echo "  4. Set environment variables in Coolify UI"
+          echo "  5. Or use Coolify API: curl -X POST https://api.coolify.io/v1/apps/${COOLIFY_APP_NAME}/deploy"
+
+      - ✅ name: Deployment complete
+        run: |
+          echo "🚀 Docker image ${IMAGE_NAME}:${IMAGE_TAG} is ready for Coolify deployment"
+          echo "📋 Remember to set these env vars in Coolify:"
+          echo "   - DB_USER, DB_PASSWORD, DB_NAME"
+          echo "   - NODE_ENV=production"
+          echo "   - API_KEY_SECRET"
+          echo "   - SENDGRID_API_KEY (if using email service)"
