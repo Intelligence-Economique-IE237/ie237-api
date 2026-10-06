@@ -23,6 +23,12 @@ export default defineConfig({
 		},
 	},
 	routeRules: {
+		"/api/v1/content/blogs": {
+			static: true,
+			cache: {
+				maxAge: 3600 * 24 * 7 * 4,
+			},
+		},
 		"/api/v1/**": {
 			cors: true,
 			headers: {
