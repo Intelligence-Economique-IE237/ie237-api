@@ -1,0 +1,65 @@
+# IE237 API - Docker Compose
+# -----------------------------------------
+# Full stack: Nitro API + PostgreSQL
+# -----------------------------------------
+
+version: "3.9"
+
+services:
+  # 1️⃣ API Application (Nitro)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Environment variables for database connection
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@db:5432/ie237
+      - NODE_ENV=production
+      - PORT=3000
+    # Port mapping: host 3000 -> container 3000
+    ports:
+      - "3000:3000"
+    # Depend on PostgreSQL starting first
+    depends_on:
+      - db
+    # Restart policy
+    restart: unless-stopped
+    # Health check for the API service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 2️⃣ PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    # Container name for easy reference
+    container_name: ie237-postgres
+    # Environment variables for PostgreSQL setup
+    environment:
+      POSTGRES_DB: ie237
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    # Volume for persistent data (survives container restarts)
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    # Port mapping: host 5432 -> container 5432
+    ports:
+      - "5432:5432"
+    # Restart policy
+    restart: unless-stopped
+    # Health check for PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ie237"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# 3️⃣ Volumes for persistent data
+volumes:
+  pg_data:
+    # Named volume for PostgreSQL data persistence
+    driver: local

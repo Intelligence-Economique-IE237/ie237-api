@@ -1,0 +1,63 @@
+# Docker ignore for IE237 API
+# -----------------------------------------
+# Exclude development and local files
+# -----------------------------------------
+
+# Dependency directories
+node_modules/
+pnpm-lock.yaml*
+pnpm-workspace.yaml*
+
+# Output and build artifacts
+.output/
+.dist/
+
+# Environment files (never commit these!)
+.env*
+*.env.local*
+*.env.development*
+*.env.production*
+
+# Git and version control
+.git/
+.gitignore*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs
+*.log*
+logs/
+
+# Temporary and runtime
+tmp/
+*.pid
+*.seed
+
+# Docker specific
+Dockerfile*
+.dockerignore*
+
+# Documentation (already in repo, but can be excluded if needed)
+docs/
+
+# Testing and CI
+.nyc_coverage/
+coverage/
+*.spec.*
+*.test.*
+
+# TypeScript and build temp
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Bun/pnpm artifacts
+.pnpm*
+
+# Health checks and metrics
+.halt
+
+# Nitro specific (development only)
+.nitro/

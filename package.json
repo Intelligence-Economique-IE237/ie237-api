@@ -1,5 +1,5 @@
 {
-  "name": "nitro-starter",
+  "name": "ie237",
   "type": "module",
   "scripts": {
     "build": "nitro build",
