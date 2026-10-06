@@ -35,7 +35,10 @@ export default defineHandler((event) => {
 		status: 200,
 		body: mockRssXml,
 	}
-}, defineRouteMeta({
+})
+
+// Define OpenAPI metadata for this route
+defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["RSS"],
@@ -54,4 +57,4 @@ export default defineHandler((event) => {
 			},
 		},
 	},
-}))
+})
