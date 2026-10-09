@@ -12,6 +12,8 @@ export default defineConfig({
 	compatibilityDate,
 	runtimeConfig: {
 		dbUrl: "",
+		siteOrigin: 'http://localhost:3000',
+		
 	},
 	openAPI: {
 		route: "/_docs/openapi.json",

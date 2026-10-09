@@ -1,75 +1,66 @@
-import { defineHandler } from "nitro";
 import { defineRouteMeta } from "nitro";
+import { defineHandler, getValidatedQuery } from "nitro/h3";
+import { useRuntimeConfig } from "nitro/runtime-config";
+import RSS from "rss";
+import z from "zod";
 
-// RSS feed items structure (JavaScript object)
-const rssItems = [
-	{
-		id: "item-1",
-		title: "Sample Article 1",
-		description: "This is a sample RSS item description",
-		label: "https://ie237-api.example.com/articles/1",
-		pubDate: new Date(),
-	},
-	{
-		id: "item-2",
-		title: "Sample Article 2",
-		description: "This is another sample RSS item description",
-		label: "https://ie237-api.example.com/articles/2",
-		pubDate: new Date(),
-	},
-];
-
-// Transform JavaScript object to RSS 2.0 XML string
-// function objectToRssXml(items: object) {
-// 	const pubDateToString = (date) => date.toUTCString();
-
-// 	return `<?xml version="1.0" encoding="UTF-8"?>
-// <rss version="2.0">
-//   <channel>
-//     <title>IE237 API RSS Feed</title>
-//     <description>RSS feed for IE237 API articles and updates</description>
-//     <link>https://ie237-api.example.com/rss</link>
-//     ${items
-// 		.map(
-// 			(item) => `
-//     <item>
-//       <id>${item.id}</id>
-//       <title>${item.title}</title>
-//       <description>${item.description}</description>
-//       <link>${item.label}</link>
-//       <pubDate>${pubDateToString(item.pubDate)}</pubDate>
-//     </item>`,
-// 		)
-// 		.join("")}
-//   </channel>
-// </rss>`;
-// }
-
-// GET /api/rss - Return RSS feed XML (transformed from JavaScript objects)
-export default defineHandler((event) => {
-	// Set content type to XML
-	event.res.headers.set("content-type", "application/xml; charset=utf-8");
+const querySchema = z.object({
+	category: z.string().nullish().default(null),
+	page: z.coerce
+		.number()
+		.positive("Must be greater than zero")
+		.nullish()
+		.default(0),
+	size: z.coerce
+		.number()
+		.positive("Must be greater than zero")
+		.nullish()
+		.default(100),
 });
 
-// Define OpenAPI metadata for this route
+export default defineHandler(async (event) => {
+	const { data: query } = await getValidatedQuery(
+		event,
+		querySchema.safeParse,
+	);
+	const { siteOrigin } = useRuntimeConfig();
+
+	const feed = new RSS({
+		title: "IE237 ",
+		description: "",
+		site_url: siteOrigin,
+		feed_url: `${siteOrigin}/rss?category=${query?.category || ""}`,
+		pubDate: new Date(),
+		language: "en",
+	});
+
+	event.res.headers.set("Content-Type", "application/rss+xml");
+	return feed.xml();
+});
+
 defineRouteMeta({
 	openAPI: {
-		method: "GET",
 		tags: ["RSS"],
-		summary: "Get RSS feed XML",
-		description:
-			"Retrieve RSS feed XML for the IE237 API, transformed from JavaScript objects",
-		responses: {
-			200: {
-				description: "RSS feed XML retrieved successfully",
-				content: {
-					"application/xml": {
-						schema: {
-							type: "string",
-						},
-					},
-				},
+		description: "Returns paginated RSS feeds",
+		summary: "RSS feed",
+		parameters: [
+			{
+				in: "query",
+				name: "category",
+				description: "The category preferred for by the user's request",
 			},
-		},
+			{
+				name: "page",
+				in: "query",
+				description: "The pagination page offset",
+				schema: { type: "number", min: 0 },
+			},
+			{
+				name: "size",
+				in: "query",
+				description: "The pagination page size",
+				schema: { type: "number", min: 0 },
+			},
+		],
 	},
 });

@@ -12,7 +12,9 @@
     "#*": "./*"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.6.0",
     "@types/node": "latest",
+    "@types/rss": "^0.0.32",
     "drizzle-kit": "1.0.0-rc.4",
     "nitro": "latest",
     "typescript": "latest"
@@ -21,6 +23,7 @@
     "dotenv": "^18.0.5",
     "drizzle-orm": "1.0.0-rc.4",
     "pg": "^8.23.1",
+    "rss": "^1.2.2",
     "ulid": "^3.0.2",
     "xml2js": "^0.6.2",
     "zod": "^4.6.5"
