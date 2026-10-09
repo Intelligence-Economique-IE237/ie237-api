@@ -1,7 +1,6 @@
-import { defineHandler, HTTPError } from "nitro";
+import { defineHandler, defineRouteMeta, HTTPError } from "nitro";
+import { getValidatedRouterParams } from "nitro/h3";
 import { prettifyError, z } from "zod";
-import { createError, getValidatedRouterParams } from "nitro/h3";
-import { defineRouteMeta } from "nitro";
 
 // Schema for URL parameter validation
 const slugSchema = z.object({
@@ -45,7 +44,10 @@ export default defineHandler(async (event) => {
 		success: true,
 		data: mockContent,
 	};
-}, defineRouteMeta({
+});
+
+
+defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["Content"],
@@ -60,12 +62,12 @@ export default defineHandler(async (event) => {
 					minLength: 1,
 					pattern: "^[a-z0-9]+(?:[_-]?[a-z0-9]+)*$",
 				},
-			description: "Content slug identifier",
+				description: "Content slug identifier",
 			},
 		],
 		responses: {
 			200: {
-			description: "Content item retrieved successfully",
+				description: "Content item retrieved successfully",
 				content: {
 					"application/json": {
 						schema: {
@@ -82,8 +84,14 @@ export default defineHandler(async (event) => {
 										status: { type: "string" },
 										content: { type: "string" },
 										excerpt: { type: "string" },
-										created_at: { type: "string", format: "date-time" },
-										updated_at: { type: "string", format: "date-time" },
+										created_at: {
+											type: "string",
+											format: "date-time",
+										},
+										updated_at: {
+											type: "string",
+											format: "date-time",
+										},
 									},
 								},
 							},
@@ -93,7 +101,7 @@ export default defineHandler(async (event) => {
 				},
 			},
 			400: {
-			description: "Invalid slug parameter",
+				description: "Invalid slug parameter",
 				content: {
 					"application/json": {
 						schema: {
@@ -107,4 +115,4 @@ export default defineHandler(async (event) => {
 			},
 		},
 	},
-}))
+});

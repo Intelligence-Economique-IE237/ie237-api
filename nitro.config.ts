@@ -14,6 +14,7 @@ export default defineConfig({
 		dbUrl: "",
 	},
 	openAPI: {
+		route: "/_docs/openapi.json",
 		meta: { title: "IE237 API", version: "1.0.0" },
 		ui: {
 			swagger: false,
