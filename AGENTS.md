@@ -16,6 +16,7 @@ Refer to `node_modules/nitro/dist/docs/README.md` when working on server (your k
 - Using Drizzle ORM for database migrations and queries
 - Using PostgreSQL as the database.
 - Always interact with external services via interfaces/contracts and never use direct implementation details.
+- Use conventional commit messages for git commits
 
 ## Restrictions
 **Note**: DO NOT DO THE FOLLOWING
