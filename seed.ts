@@ -40,6 +40,7 @@ await db.transaction(async () => {
 					category: slug,
 					excerpt: c.substring(0, 50),
 					status: faker.helpers.arrayElement(["draft", "published"]),
+					priority: faker.helpers.arrayElement([0,1,2,3,4,5,6])
 				})
 				.onConflictDoNothing();
 		}

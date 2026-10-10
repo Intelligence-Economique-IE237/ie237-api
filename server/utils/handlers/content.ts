@@ -1,7 +1,75 @@
 import { content, type Content } from "#server/database/schema.ts";
-import { aliasedTable, and, count, eq, exists, isNull, sql } from "drizzle-orm";
+import {
+	aliasedTable,
+	and,
+	count,
+	eq,
+	isNull,
+	sql,
+	type AnyColumn,
+	type SQLWrapper,
+} from "drizzle-orm";
 import type { ConnectionLike } from "../db";
-import { ContentAlreadyExistsError } from "../errors";
+import { ContentAlreadyExistsError, ContentNotFoundError } from "../errors";
+
+export type UpdateContentBodyOpts = {
+	id: string;
+	content: string;
+};
+export async function updateContentBody(
+	tx: ConnectionLike,
+	opts: UpdateContentBodyOpts,
+) {
+	const c = await tx.query.content.findFirst({
+		where: {
+			id: opts.id,
+			isTranslationOf: {
+				isNull: true,
+			},
+		},
+	});
+
+	if (!c) {
+		throw new ContentNotFoundError(opts.id);
+	}
+	await tx
+		.update(content)
+		.set({
+			content: opts.content,
+		})
+		.where(and(eq(content.id, opts.id), isNull(content.isTranslationOf)));
+}
+
+export async function getContentBody(tx: ConnectionLike, id: string) {
+	const exists = await contentExistsByProp(tx, content.id, id);
+	if (!exists) throw new ContentNotFoundError(id);
+
+	return await tx.query.content.findFirst({
+		columns: { content: true },
+		where: {
+			id,
+		},
+	});
+}
+
+async function contentExistsByProp(
+	tx: ConnectionLike,
+	col: SQLWrapper<unknown>,
+	propValue: SQLWrapper<unknown> | unknown,
+) {
+	const result = await tx.execute<{ exists: boolean }>(sql`
+select exists(
+	select 
+		1 
+	from 
+		${content}
+	where
+		${eq(col, propValue)}
+)
+`);
+
+	return result.rows[0].exists;
+}
 
 export type CreateContentOptions = {
 	title: string;
@@ -13,20 +81,9 @@ export async function createContent(
 	tx: ConnectionLike,
 	options: CreateContentOptions,
 ) {
-	const result = await tx.execute<{ exists: boolean }>(sql`
-select exists(
-	select 
-		1 
-	from 
-		${content}
-	where
-		${eq(content.slug, options.slug)}
-)
-`);
+	const exists = await contentExistsByProp(tx, content.slug, options.slug);
+	if (exists) throw new ContentAlreadyExistsError(options.slug);
 
-	if (result.rows[0].exists) {
-		throw new ContentAlreadyExistsError(options.slug);
-	}
 	const [{ id }] = await tx
 		.insert(content)
 		.values({
@@ -54,7 +111,7 @@ export async function getPublishedContentStats(tx: ConnectionLike) {
 	};
 }
 
-export async function findPublishedContent(
+export async function lookupPublishedContent(
 	tx: ConnectionLike,
 	page: number,
 	size: number,
@@ -70,10 +127,7 @@ export async function findPublishedContent(
 	}
 
 	return await tx.query.content.findMany({
-		columns: { content: false },
-		with: {
-			attachmentGroups: { columns: { urls: true } },
-		},
+		columns: { content: false, tags: false },
 		where: {
 			AND: [
 				{ status: "published" },
@@ -93,10 +147,13 @@ export async function lookupPublishedContentById(
 	id: string,
 ) {
 	return await tx.query.content.findFirst({
-		columns: { content: false },
+		columns: { content: false, tags: false },
 		where: {
-			id,
-			status: "published",
+			AND: [
+				{ id },
+				{ status: "published" },
+				{ isTranslationOf: { isNull: true } },
+			],
 		},
 	});
 }

@@ -1,6 +1,6 @@
 import { useDatabase } from "#server/utils/db.ts";
 import {
-	findPublishedContent,
+	lookupPublishedContent,
 	getPublishedContentStats,
 } from "#server/utils/handlers/content.ts";
 import { defineHandler, defineRouteMeta, HTTPError } from "nitro";
@@ -9,7 +9,7 @@ import z, { prettifyError } from "zod";
 
 const querySchema = z.object({
 	query: z.string().trim().optional(),
-	page: z.coerce.number().positive("Must be greater than zero").default(0),
+	page: z.coerce.number().min(0).default(0),
 	size: z.coerce.number().positive("Must be greater than zero").default(5),
 });
 export default defineHandler(async (event) => {
@@ -22,12 +22,19 @@ export default defineHandler(async (event) => {
 	}
 
 	const db = useDatabase();
-	const d = await findPublishedContent(db, data.page, data.size, data.query);
+	const d = await lookupPublishedContent(
+		db,
+		data.page,
+		data.size,
+		data.query,
+	);
 	const { totalRecords } = await getPublishedContentStats(db);
 	const totalPages = Math.ceil(totalRecords / data.size);
 	return {
 		totalRecords,
-		hasNext: data.page < totalPages,
+		hasNext: data.page < (totalPages-1),
+		firstPage: 0,
+		lastPage: totalPages - 1,
 		hasPrevious: data.page > 0,
 		totalPages,
 		data: d,
@@ -50,13 +57,13 @@ defineRouteMeta({
 				name: "page",
 				in: "query",
 				description: "The pagination page offset",
-				schema: { type: "number", min: 0 },
+				schema: { type: "number", min: 0, default: 0 },
 			},
 			{
 				name: "size",
 				in: "query",
 				description: "The pagination page size",
-				schema: { type: "number", min: 0 },
+				schema: { type: "number", min: 0, default: 10 },
 			},
 		],
 		$global: {
@@ -68,6 +75,7 @@ defineRouteMeta({
 						required: [
 							"type",
 							"slug",
+							"priority",
 							"title",
 							"createdAt",
 							"updatedAt",
@@ -90,13 +98,13 @@ defineRouteMeta({
 							title: {
 								type: "string",
 							},
-							tags: {
-								type: "array",
-								nullable: true,
-								items: {
-									type: "string",
-								},
-							},
+							// tags: {
+							// 	type: "array",
+							// 	nullable: true,
+							// 	items: {
+							// 		type: "string",
+							// 	},
+							// },
 							createdAt: {
 								type: "string",
 								format: "date-time",
@@ -128,21 +136,22 @@ defineRouteMeta({
 								type: "string",
 								nullable: true,
 							},
-							attachments: {
-								type: "array",
-								items: {
-									type: "object",
-									required: ["urls"],
-									properties: {
-										urls: {
-											type: "array",
-											items: {
-												type: "string",
-											},
-										},
-									},
-								},
-							},
+							priority: { type: "number" },
+							// attachments: {
+							// 	type: "array",
+							// 	items: {
+							// 		type: "object",
+							// 		required: ["urls"],
+							// 		properties: {
+							// 			urls: {
+							// 				type: "array",
+							// 				items: {
+							// 					type: "string",
+							// 				},
+							// 			},
+							// 		},
+							// 	},
+							// },
 						},
 					},
 				},
@@ -154,9 +163,56 @@ defineRouteMeta({
 				content: {
 					"application/json": {
 						schema: {
-							type: "array",
-							items: {
-								$ref: "#/components/schemas/ContentLookup",
+							type: "object",
+							additionalProperties: false,
+							required: [
+								"totalRecords",
+								"hasNext",
+								"hasPrevious",
+								"totalPages",
+								"firstPage",
+								"lastPage",
+								"data",
+							],
+							properties: {
+								totalRecords: {
+									type: "number",
+									minimum: 0,
+									description:
+										"The total number of content posts matching the filters",
+								},
+								hasNext: {
+									type: "boolean",
+									description:
+										"Whether there's more pages after the current page",
+								},
+								hasPrevious: {
+									type: "boolean",
+									description:
+										"Whether there's more pages before the current page",
+								},
+								totalPages: {
+									type: "number",
+									minimum: 1,
+									description:
+										"The total number of pages as specified in the query",
+								},
+								firstPage: {
+									type: "number",
+									description: "The first page index",
+								},
+								lastPage: {
+									type: "number",
+									description: "The last page index",
+								},
+								data: {
+									description:
+										"The slice of content post data",
+									type: "array",
+									items: {
+										$ref: "#/components/schemas/ContentLookup",
+									},
+								},
 							},
 						},
 					},
