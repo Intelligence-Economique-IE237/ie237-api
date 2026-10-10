@@ -1,0 +1,1 @@
+ALTER TABLE "content" DROP CONSTRAINT "content_is_translation_of_content_id_fkey", ADD CONSTRAINT "content_is_translation_of_content_id_fkey" FOREIGN KEY ("is_translation_of") REFERENCES "content"("id") ON DELETE CASCADE;

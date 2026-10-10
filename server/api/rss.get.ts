@@ -62,5 +62,14 @@ defineRouteMeta({
 				schema: { type: "number", min: 0 },
 			},
 		],
+		responses: {
+			200: {
+				description: 'RSS feed',
+				content: {
+					'application/rss+xml': {
+					}
+				}
+			}
+		}
 	},
 });

@@ -6,7 +6,7 @@ export default defineConfig({
 	experimental: {
 		envExpansion: true,
 		openAPI: true,
-		tasks: true,
+		// tasks: true,
 	},
 	serverDir: "./server",
 	compatibilityDate,

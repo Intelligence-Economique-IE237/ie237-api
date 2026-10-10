@@ -1,3 +1,5 @@
+import { useDatabase } from "#server/utils/db.ts";
+import { findPublishedContentBySlug } from "#server/utils/handlers/content.ts";
 import { defineHandler, defineRouteMeta, HTTPError } from "nitro";
 import { getValidatedRouterParams } from "nitro/h3";
 import { prettifyError, z } from "zod";
@@ -24,34 +26,24 @@ export default defineHandler(async (event) => {
 	}
 	const { slug } = data;
 
-	// TODO: Fetch from database using drizzle ORM
-	// const { data } = await db.select().from(content).where(sql.eq(content.slug, slug))
+	const db = useDatabase();
+	const content = await findPublishedContentBySlug(db, slug);
 
-	// Mock response for foundation phase
-	const mockContent = {
-		id: 1,
-		title: `Sample ${slug} Content`,
-		slug: slug,
-		type: "news" as const,
-		status: "published" as const,
-		content: `# ${slug.replace(/-/g, " ")} Title\n\nThis is sample content for the ${slug} endpoint.`,
-		excerpt: `Excerpt for ${slug} - a sample summary`,
-		created_at: new Date().toISOString(),
-		updated_at: new Date().toISOString(),
-	};
+	if (!content) {
+		throw new HTTPError("Content not found or has been deleted", {
+			status: 404,
+		});
+	}
 
-	return {
-		success: true,
-		data: mockContent,
-	};
+	return content;
 });
-
 
 defineRouteMeta({
 	openAPI: {
 		method: "GET",
+		operationId: 'lookupContentBySlug',
 		tags: ["Content"],
-		summary: "View single content item by slug",
+		summary: "Get Content Post",
 		parameters: [
 			{
 				name: "slug",
@@ -84,11 +76,11 @@ defineRouteMeta({
 										status: { type: "string" },
 										content: { type: "string" },
 										excerpt: { type: "string" },
-										created_at: {
+										createdAt: {
 											type: "string",
 											format: "date-time",
 										},
-										updated_at: {
+										updatedAt: {
 											type: "string",
 											format: "date-time",
 										},

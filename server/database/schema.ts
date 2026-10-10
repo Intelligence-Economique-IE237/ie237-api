@@ -1,11 +1,16 @@
+import { isNotNull, sql } from "drizzle-orm";
 import {
-	pgTable,
-	text,
-	serial,
-	integer,
 	boolean,
-	timestamp,
+	foreignKey,
+	index,
+	integer,
 	pgEnum,
+	pgTable,
+	serial,
+	smallint,
+	text,
+	timestamp,
+	uuid,
 } from "drizzle-orm/pg-core";
 
 // -----------------------------------------------------
@@ -61,22 +66,93 @@ export const nlStatusEnum = pgEnum("newsletter_status", [
 // -----------------------------------------------------
 // Content Table (Issue #1: Foundation)
 // -----------------------------------------------------
-
-export const content = pgTable("content", {
-	id: serial("id").primaryKey(),
-	title: text("title").notNull(),
-	slug: text("slug").notNull().unique(),
-	type: contentTypeEnum("type").notNull(), // 'news' | 'blog'
-	status: contentStatusEnum("status").notNull(), // 'draft' | 'published'
-	content: text("content").notNull(),
-	excerpt: text("excerpt"),
-	created_at: timestamp("created_at", { mode: "string" })
+export const categories = pgTable("categories", {
+	slug: text().notNull().primaryKey(),
+	title: text().notNull(),
+	tags: text().array().default([]),
+	createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
 		.notNull()
 		.defaultNow(),
-	updated_at: timestamp("updated_at", { mode: "string" })
+	updatedAt: timestamp("updated_at", {
+		mode: "date",
+		withTimezone: true,
+	})
 		.notNull()
-		.defaultNow(),
+		.defaultNow()
+		.$onUpdate(() => new Date()),
 });
+
+export const content = pgTable(
+	"content",
+	{
+		id: uuid().primaryKey().notNull().defaultRandom(),
+		title: text("title").notNull(),
+		slug: text("slug").notNull().unique(),
+		type: contentTypeEnum("type").notNull(), // 'news' | 'blog'
+		status: contentStatusEnum("status").notNull().default("draft"), // 'draft' | 'published'
+		content: text("content"),
+		language: text().notNull(),
+		excerpt: text("excerpt"),
+		isTranslationOf: uuid("is_translation_of"),
+		createdAt: timestamp("created_at", { mode: "string" })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", {
+			mode: "date",
+			withTimezone: true,
+		})
+			.notNull()
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		tags: text().array(),
+		category: text(),
+		priority: smallint().default(0),
+	},
+	(t) => [
+		index().on(t.updatedAt),
+		index().on(t.createdAt),
+		index("content_title_excerpt_idx").using(
+			"gin",
+			sql`to_tsvector('simple', coalesce(${t.title}, '') || ' ' || coalesce(${t.excerpt}, ''))`,
+		),
+		index("content_tags_idx").using("gin", t.tags),
+		index().on(t.isTranslationOf).where(isNotNull(t.isTranslationOf)),
+		index().on(t.language),
+		index().on(t.category).where(isNotNull(t.category)),
+		foreignKey({
+			columns: [t.isTranslationOf],
+			foreignColumns: [t.id],
+		}).onDelete('cascade'),
+		foreignKey({
+			columns: [t.category],
+			foreignColumns: [categories.slug],
+		}).onDelete("set null"),
+	],
+);
+
+// export const writers = pgTable("writers", {
+// 	id: uuid().primaryKey().notNull().defaultRandom(),
+// 	names: text().notNull(),
+// 	avatar: text(),
+// });
+
+// export const writerLinks =
+
+// export const contentAttachmentType = pgEnum('content_attachment_type', ['image', 'video'])
+export const contentAttachments = pgTable(
+	"content_attachment_groups",
+	{
+		urls: text().array().notNull().default([]),
+		content: uuid().notNull(),
+	},
+	(t) => [
+		index().on(t.content),
+		foreignKey({
+			columns: [t.content],
+			foreignColumns: [content.id],
+		}).onDelete("cascade"),
+	],
+);
 
 // -----------------------------------------------------
 // Subscribers Table (Part of Issue #1, full subscription system in Issue #2)
@@ -113,7 +189,7 @@ export const rssFeedsBase = pgTable("rss_feeds_base", {
 	config_json: text("config_json"),
 	last_built_at: timestamp("last_built_at", { mode: "string" }),
 	is_active: text("is_active").notNull().default("false"), // 'true' | 'false'
-})
+});
 
 // Materialized view for RSS feed reads (read-optimized)
 export const rssFeeds = pgTable("rss_feeds_v", {

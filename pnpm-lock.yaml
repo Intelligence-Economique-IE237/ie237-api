@@ -13,13 +13,16 @@ importers:
         version: 18.0.5
       drizzle-orm:
         specifier: 1.0.0-rc.4
-        version: 1.0.0-rc.4(pg@8.23.1)(zod@4.6.5)
+        version: 1.0.0-rc.4(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.5)
       pg:
         specifier: ^8.23.1
         version: 8.23.1
       rss:
         specifier: ^1.2.2
         version: 1.2.2
+      tinyld:
+        specifier: ^1.3.4
+        version: 1.3.4
       ulid:
         specifier: ^3.0.2
         version: 3.0.2
@@ -36,6 +39,9 @@ importers:
       '@types/node':
         specifier: latest
         version: 26.6.4
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
       '@types/rss':
         specifier: ^0.0.32
         version: 0.0.32
@@ -322,6 +328,9 @@ packages:
 
   '@types/node@26.6.4':
     resolution: {integrity: sha512-ldVPDCzj7fsaGZrLB0NuHuTvJcsNasysBAqMolr/cgxrLd1xbqxIr3XJiPnHHJUCxj5sNF1vnRj9aWnrVh5Jcg==}
+
+  '@types/pg@8.23.1':
+    resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
 
   '@types/rss@0.0.32':
     resolution: {integrity: sha512-2oKNqKyUY4RSdvl5eZR1n2Q9yvw3XTe3mQHsFPn9alaNBxfPnbXBtGP8R0SV8pK1PrVnLul0zx7izbm5/gF5Qw==}
@@ -760,6 +769,11 @@ packages:
     engines: {node: '>=20.16.0'}
     hasBin: true
 
+  tinyld@1.3.4:
+    resolution: {integrity: sha512-u26CNoaInA4XpDU+8s/6Cq8xHc2T5M4fXB3ICfXPokUQoLzmPgSZU02TAkFwFMJCWTjk53gtkS8pETTreZwCqw==}
+    engines: {node: '>= 12.10.0', npm: '>= 6.12.0', yarn: '>= 1.20.0'}
+    hasBin: true
+
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
     engines: {node: '>=16.20.0'}
@@ -937,6 +951,12 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
+  '@types/pg@8.23.1':
+    dependencies:
+      '@types/node': 26.6.4
+      pg-protocol: 1.16.1
+      pg-types: 2.2.0
+
   '@types/rss@0.0.32': {}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
@@ -1017,8 +1037,9 @@ snapshots:
       get-tsconfig: 4.14.3
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.4(pg@8.23.1)(zod@4.6.5):
+  drizzle-orm@1.0.0-rc.4(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.5):
     optionalDependencies:
+      '@types/pg': 8.23.1
       pg: 8.23.1
       zod: 4.6.5
 
@@ -1190,6 +1211,8 @@ snapshots:
   split2@4.2.0: {}
 
   srvx@1.0.5: {}
+
+  tinyld@1.3.4: {}
 
   typescript@7.0.2:
     optionalDependencies:
