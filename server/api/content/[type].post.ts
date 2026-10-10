@@ -47,7 +47,7 @@ defineRouteMeta({
 	openAPI: {
 		tags: ["Content"],
 		summary: "Create content",
-		operationId: 'createContent',
+		operationId: "createContent",
 		parameters: [
 			{
 				name: "type",
@@ -74,7 +74,34 @@ defineRouteMeta({
 				},
 			},
 		},
+		$global: {
+			components: {
+				schemas: {
+					ErrorPayload: {
+						type: "object",
+						additionalProperties: false,
+						required: ["error", "status"],
+						properties: {
+							error: { type: "boolean", enum: [true] },
+							status: { type: "number", example: 400 },
+							message: { type: "string" },
+						},
+					},
+				},
+			},
+		},
 		responses: {
+			409: {
+				description: "The content already exists with the same title",
+				content: {
+					"application/json": {
+						description: "Error payload",
+						schema: {
+							$ref: "#/components/schemas/ErrorPayload",
+						},
+					},
+				},
+			},
 			202: {
 				description:
 					"The content was created successfully. But some processing is still on-going",
