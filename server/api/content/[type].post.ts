@@ -91,6 +91,17 @@ defineRouteMeta({
 			},
 		},
 		responses: {
+			400: {
+				description: "The request was invalid",
+				content: {
+					"application/json": {
+						description: "Error payload",
+						schema: {
+							$ref: "#/components/schemas/ErrorPayload",
+						},
+					},
+				},
+			},
 			409: {
 				description: "The content already exists with the same title",
 				content: {

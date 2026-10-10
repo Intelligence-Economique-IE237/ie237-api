@@ -37,9 +37,9 @@ export default defineHandler(async (event) => {
 defineRouteMeta({
 	openAPI: {
 		tags: ["Content"],
-		operationId: 'lookupContent',
-		summary: "Get content",
-		description: "Get content posts",
+		operationId: "lookupContent",
+		summary: "Lookup all content",
+		description: "Lookup content posts",
 		parameters: [
 			{
 				in: "query",
@@ -107,6 +107,7 @@ defineRouteMeta({
 							},
 							id: {
 								type: "string",
+								format: "uuid",
 							},
 							status: {
 								type: "string",

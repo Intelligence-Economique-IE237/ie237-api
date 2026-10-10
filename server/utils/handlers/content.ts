@@ -88,14 +88,15 @@ export async function findPublishedContent(
 	});
 }
 
-export async function findPublishedContentBySlug(
+export async function lookupPublishedContentById(
 	tx: ConnectionLike,
-	slug: string,
+	id: string,
 ) {
 	return await tx.query.content.findFirst({
 		columns: { content: false },
 		where: {
-			slug,
+			id,
+			status: "published",
 		},
 	});
 }
