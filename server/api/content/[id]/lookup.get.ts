@@ -1,7 +1,7 @@
 import { useDatabase } from "#server/utils/db.ts";
 import { lookupPublishedContentById } from "#server/utils/handlers/content.ts";
+import { validateRouterZod } from "#server/utils/utils.ts";
 import { defineHandler, defineRouteMeta, HTTPError } from "nitro";
-import { getValidatedRouterParams } from "nitro/h3";
 import { z } from "zod";
 
 // Schema for URL parameter validation
@@ -11,15 +11,7 @@ const pathSchema = z.object({
 
 // GET /api/content/:id - View single content item
 export default defineHandler(async (event) => {
-	const { data, success, error } = await getValidatedRouterParams(
-		event,
-		pathSchema.safeParse,
-	);
-	if (!success) {
-		throw new HTTPError(z.prettifyError(error), { status: 400 });
-	}
-	const { id } = data;
-
+	const { id } = await validateRouterZod(event, pathSchema);
 	const db = useDatabase();
 	const content = await lookupPublishedContentById(db, id);
 
@@ -36,8 +28,9 @@ defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		operationId: "lookupPublishedContentById",
-		tags: ["Content"],
+		tags: ["Content", 'Public APIs'],
 		summary: "Lookup content",
+		description: "Lookup published content post by ID",
 		parameters: [
 			{
 				name: "id",

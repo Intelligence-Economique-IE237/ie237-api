@@ -40,7 +40,7 @@ export default defineHandler(async (event) => {
 
 defineRouteMeta({
 	openAPI: {
-		tags: ["RSS"],
+		tags: ["RSS", 'Public APIs'],
 		description: "Returns paginated RSS feeds",
 		summary: "RSS feed",
 		parameters: [

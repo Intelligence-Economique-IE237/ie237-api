@@ -12,8 +12,14 @@ export default defineConfig({
 	compatibilityDate,
 	runtimeConfig: {
 		dbUrl: "",
-		siteOrigin: 'http://localhost:3000',
-		
+		siteOrigin: "http://localhost:3000",
+		lokiOrigin: "http://localhost:3100",
+		minioHost: "",
+		minioPort: 9000,
+		minioSecretKey: "",
+		minioAccessKey: "",
+		minioUseSsl: false,
+		minioBucket: ''
 	},
 	openAPI: {
 		route: "/_docs/openapi.json",

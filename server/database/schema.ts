@@ -6,6 +6,7 @@ import {
 	integer,
 	pgEnum,
 	pgTable,
+	primaryKey,
 	serial,
 	smallint,
 	text,
@@ -122,7 +123,7 @@ export const content = pgTable(
 		foreignKey({
 			columns: [t.isTranslationOf],
 			foreignColumns: [t.id],
-		}).onDelete('cascade'),
+		}).onDelete("cascade"),
 		foreignKey({
 			columns: [t.category],
 			foreignColumns: [categories.slug],
@@ -144,9 +145,15 @@ export const contentAttachments = pgTable(
 	{
 		urls: text().array().notNull().default([]),
 		content: uuid().notNull(),
+		name: text().notNull(),
+		id: text().notNull(),
 	},
 	(t) => [
+		primaryKey({
+			columns: [t.content, t.id],
+		}),
 		index().on(t.content),
+		index().on(t.id),
 		foreignKey({
 			columns: [t.content],
 			foreignColumns: [content.id],

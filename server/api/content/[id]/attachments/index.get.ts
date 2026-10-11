@@ -24,8 +24,9 @@ export default defineHandler(async (event) => {
 });
 defineRouteMeta({
 	openAPI: {
+		operationId: 'getContentAttachments',
 		method: "GET",
-		tags: ["Content", "Attachments"],
+		tags: ["Content", "Attachments", 'Public APIs'],
 		summary: "List content attachments",
 		description: "Retrieve all attachments associated with a content item",
 		parameters: [
@@ -40,51 +41,48 @@ defineRouteMeta({
 				},
 			},
 		],
+		$global: {
+			components: {
+				schemas: {
+					ContentAttachment: {
+						type: "object",
+						additionalProperties: false,
+						properties: {
+							urls: {
+								type: "array",
+								items: "string",
+								default: [],
+								description:
+									"A list of resource urls which are attachments to this content posts",
+							},
+							content: {
+								type: "string",
+								format: "uuid",
+								description:
+									"The ID of the associated content post",
+							},
+							id: { type: "string" },
+							name: { type: "string" },
+						},
+					},
+				},
+			},
+		},
 		responses: {
 			200: {
 				description: "Attachments retrieved successfully",
 				content: {
 					"application/json": {
 						schema: {
-							type: "object",
-							properties: {
-								success: { type: "boolean" },
-								data: {
-									type: "array",
-									items: {
-										type: "object",
-										properties: {
-											id: { type: "string" },
-											name: { type: "string" },
-											type: { type: "string" },
-											size: { type: "integer" },
-											url: { type: "string" },
-											created_at: {
-												type: "string",
-												format: "date-time",
-											},
-										},
-									},
-								},
-							},
-							required: ["success", "data"],
-						},
-					},
-				},
-			},
-			404: {
-				description: "Content not found",
-				content: {
-					"application/json": {
-						schema: {
-							type: "object",
-							properties: {
-								message: { type: "string" },
+							type: "array",
+							items: {
+								$ref: "#/components/schemas/ContentAttachment",
 							},
 						},
 					},
 				},
 			},
+			404: { $ref: "#/components/responses/ResourceNotFoundException" },
 		},
 	},
 });

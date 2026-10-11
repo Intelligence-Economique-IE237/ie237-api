@@ -1,24 +1,17 @@
 import { useDatabase } from "#server/utils/db.ts";
 import { getContentBody } from "#server/utils/handlers/content.ts";
-import { defineHandler, defineRouteMeta, HTTPError } from "nitro";
-import { getValidatedRouterParams } from "nitro/h3";
+import { validateRouterZod } from "#server/utils/utils.ts";
+import { defineHandler, defineRouteMeta } from "nitro";
 import z from "zod";
 
 const paramsSchema = z.object({
 	id: z.string().trim().pipe(z.uuid()),
 });
 export default defineHandler(async (event) => {
-	const { data, success, error } = await getValidatedRouterParams(
-		event,
-		paramsSchema.safeParse,
-	);
-
-	if (!success) {
-		throw new HTTPError(z.prettifyError(error), { status: 400 });
-	}
+	const { id } = await validateRouterZod(event, paramsSchema);
 
 	const db = useDatabase();
-	const result = await getContentBody(db, data.id);
+	const result = await getContentBody(db, id);
 	return result?.content;
 });
 
@@ -62,15 +55,15 @@ defineRouteMeta({
 		parameters: [
 			{
 				name: "id",
-				description: 'The id of the content post',
+				description: "The id of the content post",
 				schema: { type: "string", format: "uuid" },
 				required: true,
 				in: "path",
 			},
 		],
 		summary: "Get body",
-		description: "Get the body of a content post",
-		tags: ["Content"],
+		description: "Get the body of a published content post",
+		tags: ["Content", "Public APIs"],
 		operationId: "getContentBody",
 	},
 });

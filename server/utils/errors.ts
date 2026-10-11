@@ -7,6 +7,30 @@ export abstract class ApiError extends HTTPError {
 	}
 }
 
+export class ContentAttachmentConflictError extends ApiError {
+	status = 409;
+	constructor(
+		readonly attachementId: string,
+		readonly contentId: string,
+	) {
+		super(
+			`Content: ${contentId} already has an attachment: ${attachementId}`,
+		);
+	}
+}
+
+export class ContentAttachmentNotFoundError extends ApiError {
+	status = 404;
+	constructor(
+		readonly attachementId: string,
+		readonly contentId: string,
+	) {
+		super(
+			`Content: ${contentId} does not have the attachment: ${attachementId}`,
+		);
+	}
+}
+
 export class ContentNotFoundError extends ApiError {
 	status = 409;
 	constructor(readonly contentId: string) {

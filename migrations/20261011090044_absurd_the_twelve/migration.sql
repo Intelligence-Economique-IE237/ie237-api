@@ -1,0 +1,1 @@
+ALTER TABLE "content_attachment_groups" ADD COLUMN "name" text;

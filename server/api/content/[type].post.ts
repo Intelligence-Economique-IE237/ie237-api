@@ -76,6 +76,41 @@ defineRouteMeta({
 		},
 		$global: {
 			components: {
+				responses: {
+					BadRequestException: {
+						description: "The request was invalid",
+						content: {
+							"application/json": {
+								description: "Error payload",
+								schema: {
+									$ref: "#/components/schemas/ErrorPayload",
+								},
+							},
+						},
+					},
+					ConflictException: {
+						description: "The resource specified already exists",
+						content: {
+							"application/json": {
+								description: "Error payload",
+								schema: {
+									$ref: "#/components/schemas/ErrorPayload",
+								},
+							},
+						},
+					},
+					ResourceNotFoundException: {
+						description: "The resource specified does not exist",
+						content: {
+							"application/json": {
+								description: "Error payload",
+								schema: {
+									$ref: "#/components/schemas/ErrorPayload",
+								},
+							},
+						},
+					},
+				},
 				schemas: {
 					ErrorPayload: {
 						type: "object",
@@ -91,28 +126,8 @@ defineRouteMeta({
 			},
 		},
 		responses: {
-			400: {
-				description: "The request was invalid",
-				content: {
-					"application/json": {
-						description: "Error payload",
-						schema: {
-							$ref: "#/components/schemas/ErrorPayload",
-						},
-					},
-				},
-			},
-			409: {
-				description: "The content already exists with the same title",
-				content: {
-					"application/json": {
-						description: "Error payload",
-						schema: {
-							$ref: "#/components/schemas/ErrorPayload",
-						},
-					},
-				},
-			},
+			400: { $ref: "#/components/responses/BadRequestException" },
+			409: { $ref: "#/components/responses/ConflictException" },
 			202: {
 				description:
 					"The content was created successfully. But some processing is still on-going",
