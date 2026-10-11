@@ -21,8 +21,8 @@ FROM base AS dependencies
     && corepack enable
 
 # Copy package manifests
-COPY package.json  ./
-COPY package-lock.yaml ./
+COPY package.json  .
+COPY package-lock.yaml .
 
 # Install dependencies with pnpm
 # --frozen-lockfile ensures consistent installs
