@@ -1,0 +1,1 @@
+ALTER TABLE "content" ADD COLUMN "priority" smallint DEFAULT 0;

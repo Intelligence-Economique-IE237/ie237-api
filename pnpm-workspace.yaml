@@ -1,5 +1,7 @@
 allowBuilds:
   esbuild: true
+  msgpackr-extract: true
+  protobufjs: true
 supportedArchitectures:
   cpu:
     - current

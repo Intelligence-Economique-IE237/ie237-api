@@ -1,0 +1,1 @@
+ALTER TABLE "content_attachment_groups" ALTER COLUMN "name" SET NOT NULL;
