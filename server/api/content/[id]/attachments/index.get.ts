@@ -1,36 +1,28 @@
-import { useDatabase } from "#server/utils/db.ts"
-import { defineHandler, defineRouteMeta } from "nitro"
-
-// GET /api/content/[id]/attachments - List all attachments for a content item
+import { useDatabase } from "#server/utils/db.ts";
+import { ContentNotFoundError } from "#server/utils/errors.ts";
+import {
+	contentExistsById,
+	getPublishedContentAttachments,
+} from "#server/utils/handlers/content.ts";
+import { validateRouterZod } from "#server/utils/utils.ts";
+import { defineHandler, defineRouteMeta } from "nitro";
+import z from "zod";
+const pathSchema = z.object({
+	id: z.string().trim().pipe(z.uuid()),
+});
 export default defineHandler(async (event) => {
-	// TODO: Fetch attachments from database using drizzle ORM
-	// const { data } = await db.select().from(attachments).where(eq(attachments.contentId, contentId))
+	const path = await validateRouterZod(event, pathSchema);
 
-	// Mock response for foundation phase
-	const mockAttachments = [
-		{
-			id: "attachment-1",
-			name: "sample-image.png",
-			type: "image/png",
-			size: 1024,
-			url: "https://ie237-api.example.com attachments/sample-image.png",
-			created_at: new Date().toISOString(),
-		},
-		{
-			id: "attachment-2",
-			name: "document.pdf",
-			type: "application/pdf",
-			size: 2048,
-			url: "https://ie237-api.example.com attachments/document.pdf",
-			created_at: new Date().toISOString(),
-		},
-	]
+	const db = useDatabase();
 
-	return {
-		success: true,
-		data: mockAttachments,
+	const exists = await contentExistsById(db, path.id);
+	if (!exists) {
+		throw new ContentNotFoundError(path.id);
 	}
-}, defineRouteMeta({
+
+	return await getPublishedContentAttachments(db, path.id);
+});
+defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["Content", "Attachments"],
@@ -67,7 +59,10 @@ export default defineHandler(async (event) => {
 											type: { type: "string" },
 											size: { type: "integer" },
 											url: { type: "string" },
-											created_at: { type: "string", format: "date-time" },
+											created_at: {
+												type: "string",
+												format: "date-time",
+											},
 										},
 									},
 								},
@@ -92,4 +87,4 @@ export default defineHandler(async (event) => {
 			},
 		},
 	},
-}))
+});
