@@ -22,7 +22,7 @@ RUN apk add --no-cache \
 
 # Copy package manifests
 COPY package.json  .
-COPY package-lock.yaml .
+COPY pnpm-lock.yaml .
 
 # Install dependencies with pnpm
 # --frozen-lockfile ensures consistent installs
