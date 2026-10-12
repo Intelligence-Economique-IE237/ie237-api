@@ -18,6 +18,7 @@ RUN apk add --no-cache \
   bash \
   git \
   curl \
+  && npm install -g corepack \
   && corepack enable
 
 # Copy package manifests
@@ -55,7 +56,7 @@ EXPOSE 3000
 # Start the Nitro server
 # Using `nitro run` for development-ready production
 # Or `nitro preview` for static-ready production
-CMD ["pnpm", "start"]
+# CMD ["pnpm", "start"]
 
 # Alternative: direct node execution if needed
-# ENTRYPOINT ["node", ".output/server/index.mjs"]
+ENTRYPOINT ["node", ".output/server/index.mjs"]
