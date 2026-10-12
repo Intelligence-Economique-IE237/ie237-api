@@ -1,9 +1,10 @@
 import { useDatabase } from "#server/utils/db.ts";
 import {
-	lookupPublishedContent,
 	getPublishedContentStats,
+	lookupPublishedContent,
 } from "#server/utils/handlers/content.ts";
-import { defineHandler, defineRouteMeta, HTTPError } from "nitro";
+import { defineRouteMeta, HTTPError } from "nitro";
+import { defineCachedHandler } from "nitro/cache";
 import { getValidatedQuery } from "nitro/h3";
 import z, { prettifyError } from "zod";
 
@@ -12,38 +13,43 @@ const querySchema = z.object({
 	page: z.coerce.number().min(0).default(0),
 	size: z.coerce.number().positive("Must be greater than zero").default(5),
 });
-export default defineHandler(async (event) => {
-	const { error, data, success } = await getValidatedQuery(
-		event,
-		querySchema.safeParse,
-	);
-	if (!success) {
-		throw new HTTPError(prettifyError(error), { status: 400 });
-	}
+export default defineCachedHandler(
+	async (event) => {
+		const { error, data, success } = await getValidatedQuery(
+			event,
+			querySchema.safeParse,
+		);
+		if (!success) {
+			throw new HTTPError(prettifyError(error), { status: 400 });
+		}
 
-	const db = useDatabase();
-	const d = await lookupPublishedContent(
-		db,
-		data.page,
-		data.size,
-		data.query,
-	);
-	const { totalRecords } = await getPublishedContentStats(db);
-	const totalPages = Math.ceil(totalRecords / data.size);
-	return {
-		totalRecords,
-		hasNext: data.page < (totalPages-1),
-		firstPage: 0,
-		lastPage: totalPages - 1,
-		hasPrevious: data.page > 0,
-		totalPages,
-		data: d,
-	};
-});
+		const db = useDatabase();
+		const d = await lookupPublishedContent(
+			db,
+			data.page,
+			data.size,
+			data.query,
+		);
+		const { totalRecords } = await getPublishedContentStats(db);
+		const totalPages = Math.ceil(totalRecords / data.size);
+		return {
+			totalRecords,
+			page: data.page,
+			size: d.length,
+			hasNext: data.page < totalPages - 1,
+			firstPage: 0,
+			lastPage: totalPages - 1,
+			hasPrevious: data.page > 0,
+			totalPages,
+			data: d,
+		};
+	},
+	{ maxAge: 60 * 15 },
+);
 
 defineRouteMeta({
 	openAPI: {
-		tags: ["Content", 'Public APIs'],
+		tags: ["Content", "Public APIs"],
 		operationId: "lookupPublishedContent",
 		summary: "Lookup all content",
 		description: "Lookup content posts",
@@ -86,8 +92,10 @@ defineRouteMeta({
 							"isTranslationOf",
 							"category",
 							"attachments",
+							'isArchived'
 						],
 						properties: {
+							isArchived:{type:'boolean'},
 							type: {
 								type: "string",
 								enum: ["news", "blog"],
@@ -173,8 +181,12 @@ defineRouteMeta({
 								"firstPage",
 								"lastPage",
 								"data",
+								"size",
+								"page",
 							],
 							properties: {
+								page: { type: "number", minimum: 0 },
+								size: { type: "number", minimum: 1 },
 								totalRecords: {
 									type: "number",
 									minimum: 0,

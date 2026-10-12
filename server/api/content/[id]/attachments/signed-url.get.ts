@@ -1,9 +1,7 @@
 import { useDatabase } from "#server/utils/db.ts";
 import { ContentNotFoundError } from "#server/utils/errors.ts";
 import { contentExistsById } from "#server/utils/handlers/content.ts";
-import {
-	prepareUploadURL
-} from "#server/utils/storage.ts";
+import { prepareUploadURL } from "#server/utils/storage.ts";
 import {
 	randomName,
 	validateQueryZod,
@@ -56,8 +54,19 @@ defineRouteMeta({
 			200: {
 				description: "OK",
 				content: {
-					"text/plain": {
-						schema: { type: "string", required: true },
+					"application/json": {
+						schema: {
+							type: "object",
+							additionalProperties: false,
+							required: ["url", "method"],
+							properties: {
+								url: { type: "string" },
+								method: {
+									type: "string",
+									enum: ["POST", "PUT"],
+								},
+							},
+						},
 					},
 				},
 			},

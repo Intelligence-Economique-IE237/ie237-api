@@ -1,0 +1,1 @@
+ALTER TABLE "content" RENAME COLUMN "isArchived" TO "is_archived";
