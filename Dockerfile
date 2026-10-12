@@ -27,8 +27,7 @@ COPY pnpm-lock.yaml .
 
 # Install dependencies with pnpm
 # --frozen-lockfile ensures consistent installs
-# --offline prevents network issues during build
-RUN pnpm install --frozen-lockfile --offline
+RUN pnpm install --frozen-lockfile
 
 # 4️⃣ Copy application code
 FROM dependencies AS builder
