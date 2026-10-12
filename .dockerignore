@@ -5,8 +5,6 @@
 
 # Dependency directories
 node_modules/
-pnpm-lock.yaml*
-pnpm-workspace.yaml*
 
 # Output and build artifacts
 .output/
