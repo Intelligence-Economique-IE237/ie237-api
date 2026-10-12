@@ -22,8 +22,7 @@ RUN apk add --no-cache \
   && corepack enable
 
 # Copy package manifests
-COPY package.json  .
-COPY pnpm-lock.yaml .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install dependencies with pnpm
 # --frozen-lockfile ensures consistent installs
