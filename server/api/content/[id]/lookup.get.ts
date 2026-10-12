@@ -1,7 +1,8 @@
 import { useDatabase } from "#server/utils/db.ts";
 import { lookupPublishedContentById } from "#server/utils/handlers/content.ts";
 import { validateRouterZod } from "#server/utils/utils.ts";
-import { defineHandler, defineRouteMeta, HTTPError } from "nitro";
+import { defineRouteMeta, HTTPError } from "nitro";
+import { defineCachedHandler } from "nitro/cache";
 import { z } from "zod";
 
 // Schema for URL parameter validation
@@ -10,25 +11,28 @@ const pathSchema = z.object({
 });
 
 // GET /api/content/:id - View single content item
-export default defineHandler(async (event) => {
-	const { id } = await validateRouterZod(event, pathSchema);
-	const db = useDatabase();
-	const content = await lookupPublishedContentById(db, id);
+export default defineCachedHandler(
+	async (event) => {
+		const { id } = await validateRouterZod(event, pathSchema);
+		const db = useDatabase();
+		const content = await lookupPublishedContentById(db, id);
 
-	if (!content) {
-		throw new HTTPError("Content not found or has been deleted", {
-			status: 404,
-		});
-	}
+		if (!content) {
+			throw new HTTPError("Content not found or has been deleted", {
+				status: 404,
+			});
+		}
 
-	return content;
-});
+		return content;
+	},
+	{ maxAge: 60 * 15 },
+);
 
 defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		operationId: "lookupPublishedContentById",
-		tags: ["Content", 'Public APIs'],
+		tags: ["Content", "Public APIs"],
 		summary: "Lookup content",
 		description: "Lookup published content post by ID",
 		parameters: [

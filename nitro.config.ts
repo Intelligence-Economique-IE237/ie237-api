@@ -3,6 +3,7 @@ import { defineConfig } from "nitro";
 const compatibilityDate = "2026-10-06";
 
 export default defineConfig({
+	preset: 'node-server',
 	experimental: {
 		envExpansion: true,
 		openAPI: true,
@@ -14,12 +15,16 @@ export default defineConfig({
 		dbUrl: "",
 		siteOrigin: "http://localhost:3000",
 		lokiOrigin: "http://localhost:3100",
+
 		minioHost: "",
 		minioPort: 9000,
 		minioSecretKey: "",
 		minioAccessKey: "",
 		minioUseSsl: false,
-		minioBucket: ''
+		minioBucket: "",
+
+		prometheusUrl: "",
+		prometheusPushUrl: "",
 	},
 	openAPI: {
 		route: "/_docs/openapi.json",

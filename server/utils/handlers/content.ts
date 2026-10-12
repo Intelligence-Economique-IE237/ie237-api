@@ -10,15 +10,52 @@ import {
 	eq,
 	getColumns,
 	isNull,
+	not,
 	sql,
 	type SQLWrapper,
 } from "drizzle-orm";
-import type { ConnectionLike } from "../db";
+import { useDatabase, type ConnectionLike } from "../db";
 import {
 	ContentAlreadyExistsError,
 	ContentAttachmentNotFoundError,
 	ContentNotFoundError,
 } from "../errors";
+import { defineHandler, HTTPError } from "nitro";
+import { getRouterParam } from "nitro/h3";
+import z from "zod";
+
+export async function toggleContentArchivedStatus(
+	tx: ConnectionLike,
+	id: string,
+) {
+	await tx
+		.update(content)
+		.set({
+			isArchived: not(content.isArchived),
+		})
+		.where(and(eq(content.id, id), isNull(content.isTranslationOf)));
+}
+
+export function requireExistingContent(paramKey: string) {
+	return defineHandler(async (event) => {
+		const param = getRouterParam(event, paramKey);
+		const { success, error, data } = z
+			.string()
+			.trim()
+			.pipe(z.uuid())
+			.safeParse(param);
+
+		if (!success) {
+			throw new HTTPError(z.prettifyError(error), { status: 400 });
+		}
+
+		const db = useDatabase();
+		const exists = await contentExistsById(db, data);
+		if (!exists) throw new ContentNotFoundError(data);
+
+		event.context["contentId"] = param;
+	});
+}
 
 export async function updateContent(
 	tx: ConnectionLike,
@@ -217,6 +254,7 @@ export async function getPublishedContentStats(tx: ConnectionLike) {
 			and(
 				eq(content.status, "published"),
 				isNull(content.isTranslationOf),
+				not(content.isArchived),
 			),
 		);
 	return {
@@ -245,6 +283,7 @@ export async function lookupPublishedContent(
 			AND: [
 				{ status: "published" },
 				{ isTranslationOf: { isNull: true } },
+				{ isArchived: false },
 			],
 		},
 		offset: page * size,
@@ -266,6 +305,7 @@ export async function lookupPublishedContentById(
 				{ id },
 				{ status: "published" },
 				{ isTranslationOf: { isNull: true } },
+				{ isArchived: false },
 			],
 		},
 	});
@@ -283,6 +323,7 @@ export async function getPublishedContentAttachments(
 			and(
 				eq(content.status, "published"),
 				eq(contentAttachments.content, contentId),
+				not(content.isArchived),
 			),
 		);
 }

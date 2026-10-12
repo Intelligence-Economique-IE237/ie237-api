@@ -51,5 +51,5 @@ export async function prepareUploadURL(
 		objectName,
 		lifetime,
 	);
-	return url;
+	return { url, method: "PUT" };
 }

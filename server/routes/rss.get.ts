@@ -1,3 +1,4 @@
+import { validateQueryZod } from "#server/utils/utils.ts";
 import { defineRouteMeta } from "nitro";
 import { defineHandler, getValidatedQuery } from "nitro/h3";
 import { useRuntimeConfig } from "nitro/runtime-config";
@@ -19,10 +20,7 @@ const querySchema = z.object({
 });
 
 export default defineHandler(async (event) => {
-	const { data: query } = await getValidatedQuery(
-		event,
-		querySchema.safeParse,
-	);
+	const query = await validateQueryZod(event, querySchema);
 	const { siteOrigin } = useRuntimeConfig();
 
 	const feed = new RSS({
@@ -40,7 +38,7 @@ export default defineHandler(async (event) => {
 
 defineRouteMeta({
 	openAPI: {
-		tags: ["RSS", 'Public APIs'],
+		tags: ["RSS", "Public APIs"],
 		description: "Returns paginated RSS feeds",
 		summary: "RSS feed",
 		parameters: [
@@ -64,12 +62,11 @@ defineRouteMeta({
 		],
 		responses: {
 			200: {
-				description: 'RSS feed',
+				description: "RSS feed",
 				content: {
-					'application/rss+xml': {
-					}
-				}
-			}
-		}
+					"application/rss+xml": {},
+				},
+			},
+		},
 	},
 });
