@@ -1,43 +1,72 @@
 import { useDatabase } from "#server/utils/db.ts"
-import { defineHandler } from "nitro"
-import { getCategories } from "#server/utils/handlers/category"
+import { defineHandler, defineRouteMeta } from "nitro"
+import { z } from "zod"
+import { getValidatedQuery } from "nitro/h3"
 
-// GET /api/category - List all categories
-export default defineHandler(async (event) => {
-	const db = useDatabase()
-
-	// Use service handler to fetch categories
-	const categories = await getCategories(db)
-
-	// Mock response for foundation phase (replace with actual service call when DB is ready)
-	const mockCategories = [
-		{
-			id: "cat-1",
-			name: "News",
-			description: "News categories",
-			slug: "news",
-		},
-		{
-			id: "cat-2",
-			name: "Blog",
-			description: "Blog categories",
-			slug: "blog",
-		},
-	]
-
-	return {
-		success: true,
-		data: categories.length > 0 ? categories : mockCategories,
-	}
+// Query schema for pagination
+const querySchema = z.object({
+	query: z.string().trim().optional(),
+	page: z.coerce.number().min(0).default(0),
+	size: z.coerce.number().positive("Must be greater than zero").default(10),
 })
 
-// Define OpenAPI metadata for this route (top-level function, not passed to defineHandler)
-defineRouteMeta({
+// GET /api/category - List all categories with pagination
+export default defineHandler(async (event) => {
+	const { data, success, error } = await getValidatedQuery(
+		event,
+		querySchema.safeParse,
+	)
+	if (!success) {
+		throw new HTTPError(error, { status: 400 })
+	}
+
+	const db = useDatabase()
+
+	// Use service handler to fetch categories with pagination
+	const { data: categories, totalRecords } = await getCategories(
+		db,
+		data.page,
+		data.size,
+	)
+
+	const totalPages = Math.ceil(totalRecords / data.size)
+
+	return {
+		totalRecords,
+		page: data.page,
+		size: data.size,
+		hasNext: data.page < totalPages - 1,
+		firstPage: 0,
+		lastPage: totalPages - 1,
+		hasPrevious: data.page > 0,
+		totalPages,
+		data: categories,
+	}
+}, defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["Category"],
-		summary: "List categories",
-		description: "Retrieve a list of all categories",
+		summary: "List categories with pagination",
+		description: "Retrieve a paginated list of all categories",
+		parameters: [
+			{
+				name: "query",
+				in: "query",
+				description: "A search filter for categories",
+			},
+			{
+				name: "page",
+				in: "query",
+				description: "The pagination page offset",
+				schema: { type: "number", min: 0, default: 0 },
+			},
+			{
+				name: "size",
+				in: "query",
+				description: "The pagination page size",
+				schema: { type: "number", minimum: 1, default: 10 },
+			},
+		],
 		responses: {
 			200: {
 				description: "Categories retrieved successfully",
@@ -45,8 +74,40 @@ defineRouteMeta({
 					"application/json": {
 						schema: {
 							type: "object",
+							additionalProperties: false,
+							required: [
+								"totalRecords",
+								"page",
+								"size",
+								"hasNext",
+								"hasPrevious",
+								"totalPages",
+								"firstPage",
+								"lastPage",
+								"data",
+							],
 							properties: {
-								success: { type: "boolean" },
+								totalRecords: {
+									type: "number",
+									minimum: 0,
+									description:
+										"The total number of categories matching the filters",
+								},
+								page: { type: "number", minimum: 0 },
+								size: { type: "number", minimum: 1 },
+								hasNext: { type: "boolean" },
+								hasPrevious: { type: "boolean" },
+								totalPages: {
+									type: "number",
+									minimum: 1,
+									description:
+										"The total number of pages as specified in the query",
+								},
+								firstPage: { type: "number", description: "The first page index" },
+								lastPage: {
+									type: "number",
+									description: "The last page index",
+								},
 								data: {
 									type: "array",
 									items: {
@@ -60,11 +121,10 @@ defineRouteMeta({
 									},
 								},
 							},
-							required: ["success", "data"],
 						},
 					},
 				},
 			},
 		},
 	},
-})
+}))
