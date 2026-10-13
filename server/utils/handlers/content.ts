@@ -24,6 +24,10 @@ import { defineHandler, HTTPError } from "nitro";
 import { getRouterParam } from "nitro/h3";
 import z from "zod";
 
+export async function deleteContent(tx: ConnectionLike, id: string) {
+	await tx.delete(content).where(eq(content.id, id));
+}
+
 export async function toggleContentArchivedStatus(
 	tx: ConnectionLike,
 	id: string,

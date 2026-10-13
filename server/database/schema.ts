@@ -94,7 +94,7 @@ export const content = pgTable(
 		content: text("content"),
 		language: text().notNull(),
 		excerpt: text("excerpt"),
-		isArchived: boolean('is_archived').notNull().default(false),
+		isArchived: boolean("is_archived").notNull().default(false),
 		isTranslationOf: uuid("is_translation_of"),
 		createdAt: timestamp("created_at", { mode: "string" })
 			.notNull()
