@@ -1,17 +1,11 @@
 import { useDatabase } from "#server/utils/db.ts"
 import { defineHandler } from "nitro"
 import { z } from "zod"
+import { createCategory } from "#server/utils/handlers/category"
 
 // Schema for category creation
 const categoryCreateSchema = z.object({
 	name: z.string().trim().nonempty("Name is required"),
-	description: z.string().trim().optional(),
-	slug: z.string().trim().regex(/^[a-z0-9]+(?:[_-]?[a-z0-9]+)*$/, "Slug must be lowercase alphanumeric with hyphens or underscores").optional(),
-})
-
-// Schema for category update
-const categoryUpdateSchema = z.object({
-	name: z.string().trim().nonempty("Name is required").optional(),
 	description: z.string().trim().optional(),
 	slug: z.string().trim().regex(/^[a-z0-9]+(?:[_-]?[a-z0-9]+)*$/, "Slug must be lowercase alphanumeric with hyphens or underscores").optional(),
 })
@@ -26,25 +20,20 @@ export const createCategory = defineHandler(async (event) => {
 
 	const db = useDatabase()
 
-	// TODO: Insert category into database using drizzle ORM
-	// const { data, error } = await db.insert(categories).values({ name, description, slug })
-
-	// Mock response for foundation phase
-	const mockCategory = {
-		id: "cat-1",
-		name,
-		description,
-		slug: slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-	}
+	// Use service handler to create category (within transaction)
+	const newCategory = await db.transaction(async (tx) => {
+		return await createCategory(tx, {
+			title: name,
+			description,
+			slug: slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+		})
+	})
 
 	return {
 		success: true,
-		data: mockCategory,
+		data: newCategory,
 	}
-})
-
-// Define OpenAPI metadata for this route
-export const meta = {
+}, defineRouteMeta({
 	openAPI: {
 		method: "POST",
 		tags: ["Category"],
@@ -104,4 +93,4 @@ export const meta = {
 			},
 		},
 	},
-}
+}))

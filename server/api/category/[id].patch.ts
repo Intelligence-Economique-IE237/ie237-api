@@ -1,7 +1,7 @@
 import { useDatabase } from "#server/utils/db.ts"
 import { defineHandler } from "nitro"
-import { defineRouteMeta, HTTPError } from "nitro"
 import { z } from "zod"
+import { updateCategory } from "#server/utils/handlers/category"
 
 // Schema for path parameter validation
 const pathSchema = z.object({
@@ -12,7 +12,6 @@ const pathSchema = z.object({
 const categoryUpdateSchema = z.object({
 	name: z.string().trim().nonempty("Name is required").optional(),
 	description: z.string().trim().optional(),
-	slug: z.string().trim().regex(/^[a-z0-9]+(?:[_-]?[a-z0-9]+)*$/, "Slug must be lowercase alphanumeric with hyphens or underscores").optional(),
 })
 
 // PATCH /api/category/[id] - Update category
@@ -26,37 +25,31 @@ export const updateCategory = defineHandler(async (event) => {
 
 	const db = useDatabase()
 
-	// TODO: Update category in database using drizzle ORM
-	// await db.update(categories).set({ name, description, slug }).where(eq(categories.id, id))
-
-	// Mock response for foundation phase
-	const mockCategory = {
-		id,
-		name: body.name || "Updated Category",
-		description: body.description,
-		slug: body.slug,
-	}
+	// Use service handler to update category (within transaction)
+	const updatedCategory = await db.transaction(async (tx) => {
+		return await updateCategory(tx, id, {
+			title: body.name,
+			description: body.description,
+		})
+	})
 
 	return {
 		success: true,
-		data: mockCategory,
+		data: updatedCategory,
 	}
-})
-
-// Define OpenAPI metadata for this route
-defineRouteMeta({
+}, defineRouteMeta({
 	openAPI: {
 		method: "PATCH",
 		tags: ["Category"],
 		summary: "Update category",
-		description: "Update a category by its unique identifier",
+		description: "Update a category by its unique identifier (slug)",
 		parameters: [
 			{
 				name: "id",
 				in: "path",
 				required: true,
-				description: "The category's unique identifier",
-				schema: { type: "string", format: "uuid" },
+				description: "The category's unique identifier (slug)",
+				schema: { type: "string" },
 			},
 		],
 		requestBody: {
@@ -68,7 +61,6 @@ defineRouteMeta({
 						properties: {
 							name: { type: "string" },
 							description: { type: "string" },
-							slug: { type: "string" },
 						},
 					},
 				},
@@ -126,4 +118,4 @@ defineRouteMeta({
 			},
 		},
 	},
-})
+}))

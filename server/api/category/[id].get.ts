@@ -1,6 +1,12 @@
 import { useDatabase } from "#server/utils/db.ts"
 import { defineHandler } from "nitro"
-import { defineRouteMeta } from "nitro"
+import { z } from "zod"
+import { getCategoryById } from "#server/utils/handlers/category"
+
+// Schema for path parameter validation
+const pathSchema = z.object({
+	id: z.string().trim().nonempty("ID is required"),
+})
 
 // GET /api/category/[id] - Get category by ID
 export default defineHandler(async (event) => {
@@ -8,37 +14,26 @@ export default defineHandler(async (event) => {
 
 	const db = useDatabase()
 
-	// TODO: Fetch category from database using drizzle ORM
-	// const { data } = await db.select().from(categories).where(eq(categories.id, id))
-
-	// Mock response for foundation phase
-	const mockCategory = {
-		id,
-		name: "Sample Category",
-		description: "Sample category description",
-		slug: "sample-category",
-	}
+	// Use service handler to get category by ID
+	const category = await getCategoryById(db, id)
 
 	return {
 		success: true,
-		data: mockCategory,
+		data: category,
 	}
-})
-
-// Define OpenAPI metadata for this route
-defineRouteMeta({
+}, defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["Category"],
 		summary: "Get category by ID",
-		description: "Retrieve a category by its unique identifier",
+		description: "Retrieve a category by its unique identifier (slug)",
 		parameters: [
 			{
 				name: "id",
 				in: "path",
 				required: true,
-				description: "The category's unique identifier",
-				schema: { type: "string", format: "uuid" },
+				description: "The category's unique identifier (slug)",
+				schema: { type: "string" },
 			},
 		],
 		responses: {
@@ -80,4 +75,4 @@ defineRouteMeta({
 			},
 		},
 	},
-})
+}))
