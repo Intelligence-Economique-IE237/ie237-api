@@ -21,7 +21,10 @@ export default defineHandler(async (event) => {
 		success: true,
 		data: category,
 	}
-}, defineRouteMeta({
+})
+
+// Define OpenAPI metadata for this route (top-level function, not passed to defineHandler)
+defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["Category"],
@@ -75,4 +78,4 @@ export default defineHandler(async (event) => {
 			},
 		},
 	},
-}))
+})

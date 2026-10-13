@@ -37,7 +37,10 @@ export const updateCategory = defineHandler(async (event) => {
 		success: true,
 		data: updatedCategory,
 	}
-}, defineRouteMeta({
+})
+
+// Define OpenAPI metadata for this route (top-level function, not passed to defineHandler)
+defineRouteMeta({
 	openAPI: {
 		method: "PATCH",
 		tags: ["Category"],
@@ -118,4 +121,4 @@ export const updateCategory = defineHandler(async (event) => {
 			},
 		},
 	},
-}))
+})

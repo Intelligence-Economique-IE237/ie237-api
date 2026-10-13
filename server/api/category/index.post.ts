@@ -1,7 +1,6 @@
 import { useDatabase } from "#server/utils/db.ts"
 import { defineHandler } from "nitro"
 import { z } from "zod"
-import { createCategory } from "#server/utils/handlers/category"
 
 // Schema for category creation
 const categoryCreateSchema = z.object({
@@ -33,7 +32,10 @@ export const createCategory = defineHandler(async (event) => {
 		success: true,
 		data: newCategory,
 	}
-}, defineRouteMeta({
+})
+
+// Define OpenAPI metadata for this route (top-level function, not passed to defineHandler)
+defineRouteMeta({
 	openAPI: {
 		method: "POST",
 		tags: ["Category"],
@@ -93,4 +95,4 @@ export const createCategory = defineHandler(async (event) => {
 			},
 		},
 	},
-}))
+})

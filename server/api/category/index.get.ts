@@ -1,14 +1,5 @@
 import { useDatabase } from "#server/utils/db.ts"
 import { defineHandler, defineRouteMeta } from "nitro"
-import { z } from "zod"
-import { getValidatedQuery } from "nitro/h3"
-
-// Query schema for pagination
-const querySchema = z.object({
-	query: z.string().trim().optional(),
-	page: z.coerce.number().min(0).default(0),
-	size: z.coerce.number().positive("Must be greater than zero").default(10),
-})
 
 // GET /api/category - List all categories with pagination
 export default defineHandler(async (event) => {
@@ -42,7 +33,10 @@ export default defineHandler(async (event) => {
 		totalPages,
 		data: categories,
 	}
-}, defineRouteMeta({
+})
+
+// Define OpenAPI metadata for this route (top-level function, not passed to defineHandler)
+defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["Category"],
@@ -127,4 +121,4 @@ export default defineHandler(async (event) => {
 			},
 		},
 	},
-}))
+})
