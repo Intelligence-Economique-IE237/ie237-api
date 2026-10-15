@@ -3,11 +3,18 @@ import { defineConfig } from "nitro";
 const compatibilityDate = "2026-10-06";
 
 export default defineConfig({
-	preset: 'node-server',
+	preset: "node-server",
 	experimental: {
 		envExpansion: true,
 		openAPI: true,
-		// tasks: true,
+	},
+	$development: {
+		experimental: {
+			tasks: true,
+		},
+		scheduledTasks: {
+			"* * * * *": "metrics",
+		},
 	},
 	serverDir: "./server",
 	compatibilityDate,

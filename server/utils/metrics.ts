@@ -1,4 +1,9 @@
-import { Counter, Pushgateway, Registry } from "@prometheus-io/client";
+import {
+	Counter,
+	Histogram,
+	Pushgateway,
+	Registry,
+} from "@prometheus-io/client";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import { useRuntimeConfig } from "nitro/runtime-config";
@@ -25,30 +30,47 @@ const requestCounter = new Counter({
 	] as const,
 	registers: [registry],
 });
+const requestTimer = new Histogram({
+	name: "http_request_duration_seconds",
+	help: "Duration of HTTP requests in seconds",
+	labelNames: [
+		"method",
+		"url",
+		"status_code",
+		"ip",
+		"host",
+		"query",
+		"environment",
+		"scheme",
+	] as const,
+	buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5],
+	registers: [registry],
+});
 
 export function initMetrics() {
-	if (gateway) return;
 	const logger = useLogger({
 		module: "metrics",
 		modulePath: fileURLToPath(import.meta.url),
 	});
-
+	
 	if (import.meta.dev) {
+		if (gateway) return;
 		logger.debug("initializing metrics gateway");
 		gateway = createGateway();
 		logger.debug("metrics gateway initialized");
-		pushTimer = setInterval(async () => {
-			try {
-				await gateway.pushAdd({ jobName: "ie237-api" });
-			} catch (err) {
-				logger.error("failed to push metrics", err);
-			}
-		}, 10_000);
 	}
+}
+
+export async function pushMetrics() {
+	await gateway.push({ jobName: "ie237-api" });
 }
 
 export function useRequestCounter() {
 	return requestCounter;
+}
+
+export function useRequestTimer() {
+	return requestTimer;
 }
 
 function createGateway() {
@@ -73,6 +95,3 @@ export function useMetricsRegistry() {
 	return registry;
 }
 
-export function shutdownMetrics() {
-	if (pushTimer) clearInterval(pushTimer);
-}
