@@ -1,34 +1,30 @@
-import { useDatabase } from "#server/utils/db.ts"
-import { defineHandler, defineRouteMeta } from "nitro"
-import { z } from "zod"
+import { useDatabase } from "#server/utils/db.ts";
+import { getCategories } from "#server/utils/handlers/category.ts";
+import { validateQueryZod } from "#server/utils/utils.ts";
+import { defineHandler, defineRouteMeta } from "nitro";
+import { z } from "zod";
 
 // Query schema for pagination and filtering
 const querySchema = z.object({
 	query: z.string().trim().optional(),
 	page: z.coerce.number().min(0).default(0),
 	size: z.coerce.number().positive("Must be greater than zero").default(10),
-)
+});
 
 // GET /api/category - List all categories with pagination
 export default defineHandler(async (event) => {
-	const { data, success, error } = await getValidatedQuery(
-		event,
-		querySchema.safeParse,
-	)
-	if (!success) {
-		throw new HTTPError(error, { status: 400 })
-	}
+	const data = await validateQueryZod(event, querySchema);
 
-	const db = useDatabase()
+	const db = useDatabase();
 
 	// Use service handler to fetch categories with pagination
 	const { data: categories, totalRecords } = await getCategories(
 		db,
 		data.page,
 		data.size,
-	)
+	);
 
-	const totalPages = Math.ceil(totalRecords / data.size)
+	const totalPages = Math.ceil(totalRecords / data.size);
 
 	return {
 		totalRecords,
@@ -40,8 +36,10 @@ export default defineHandler(async (event) => {
 		hasPrevious: data.page > 0,
 		totalPages,
 		data: categories,
-	}
-}, defineRouteMeta({
+	};
+});
+
+defineRouteMeta({
 	openAPI: {
 		method: "GET",
 		tags: ["Category"],
@@ -102,7 +100,10 @@ export default defineHandler(async (event) => {
 									description:
 										"The total number of pages as specified in the query",
 								},
-								firstPage: { type: "number", description: "The first page index" },
+								firstPage: {
+									type: "number",
+									description: "The first page index",
+								},
 								lastPage: {
 									type: "number",
 									description: "The last page index",
@@ -126,4 +127,4 @@ export default defineHandler(async (event) => {
 			},
 		},
 	},
-})
+});

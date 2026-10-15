@@ -71,6 +71,7 @@ export const categories = pgTable("categories", {
 	slug: text().notNull().primaryKey(),
 	title: text().notNull(),
 	tags: text().array().default([]),
+	description: text(),
 	createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
 		.notNull()
 		.defaultNow(),

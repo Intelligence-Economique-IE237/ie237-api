@@ -3,49 +3,38 @@ import {
 	getPublishedContentStats,
 	lookupPublishedContent,
 } from "#server/utils/handlers/content.ts";
-import { defineRouteMeta, HTTPError } from "nitro";
-import { defineCachedHandler } from "nitro/cache";
-import { getValidatedQuery } from "nitro/h3";
-import z, { prettifyError } from "zod";
+import { validateQueryZod } from "#server/utils/utils.ts";
+import { defineHandler, defineRouteMeta } from "nitro";
+import z from "zod";
 
 const querySchema = z.object({
 	query: z.string().trim().optional(),
 	page: z.coerce.number().min(0).default(0),
 	size: z.coerce.number().positive("Must be greater than zero").default(5),
 });
-export default defineCachedHandler(
-	async (event) => {
-		const { error, data, success } = await getValidatedQuery(
-			event,
-			querySchema.safeParse,
-		);
-		if (!success) {
-			throw new HTTPError(prettifyError(error), { status: 400 });
-		}
-
-		const db = useDatabase();
-		const d = await lookupPublishedContent(
-			db,
-			data.page,
-			data.size,
-			data.query,
-		);
-		const { totalRecords } = await getPublishedContentStats(db);
-		const totalPages = Math.ceil(totalRecords / data.size);
-		return {
-			totalRecords,
-			page: data.page,
-			size: d.length,
-			hasNext: data.page < totalPages - 1,
-			firstPage: 0,
-			lastPage: totalPages - 1,
-			hasPrevious: data.page > 0,
-			totalPages,
-			data: d,
-		};
-	},
-	{ maxAge: 60 * 15 },
-);
+export default defineHandler(async (event) => {
+	const data = await validateQueryZod(event, querySchema);
+	const db = useDatabase();
+	const d = await lookupPublishedContent(
+		db,
+		data.page,
+		data.size,
+		data.query,
+	);
+	const { totalRecords } = await getPublishedContentStats(db);
+	const totalPages = Math.ceil(totalRecords / data.size);
+	return {
+		totalRecords,
+		page: data.page,
+		size: d.length,
+		hasNext: data.page < totalPages - 1,
+		firstPage: 0,
+		lastPage: totalPages - 1,
+		hasPrevious: data.page > 0,
+		totalPages,
+		data: d,
+	};
+});
 
 defineRouteMeta({
 	openAPI: {
@@ -92,10 +81,10 @@ defineRouteMeta({
 							"isTranslationOf",
 							"category",
 							"attachments",
-							'isArchived'
+							"isArchived",
 						],
 						properties: {
-							isArchived:{type:'boolean'},
+							isArchived: { type: "boolean" },
 							type: {
 								type: "string",
 								enum: ["news", "blog"],

@@ -1,49 +1,66 @@
-import { useDatabase } from "#server/utils/db.ts"
-import { defineHandler } from "nitro"
-import { z } from "zod"
-import { updateCategory } from "#server/utils/handlers/category"
+import { useDatabase } from "#server/utils/db.ts";
+import { ResourceConflictError } from "#server/utils/errors.ts";
+import {
+	categoryExistsById,
+	updateCategory,
+} from "#server/utils/handlers/category.ts";
+import { useQueue } from "#server/utils/queue.ts";
+import { validateBodyZod, validateRouterZod } from "#server/utils/utils.ts";
+import { defineHandler, defineRouteMeta } from "nitro";
+import { z } from "zod";
 
 // Schema for path parameter validation
 const pathSchema = z.object({
 	id: z.string().trim().nonempty("ID is required"),
-})
+});
 
 // Schema for category update
 const categoryUpdateSchema = z.object({
 	name: z.string().trim().nonempty("Name is required").optional(),
 	description: z.string().trim().optional(),
-})
+	tags: z.string().trim().array().optional(),
+});
 
-// PATCH /api/category/[id] - Update category
-export const updateCategory = defineHandler(async (event) => {
-	const { id } = await event.context.params
-	const body = await event.context.json // validateRouter(categoryUpdateSchema.safeParse)
+export default defineHandler(async (event) => {
+	const path = await validateRouterZod(event, pathSchema);
+	const body = await validateBodyZod(event, categoryUpdateSchema);
+	const db = useDatabase();
 
-	if (!success) {
-		throw new HTTPError(prettifyError(error), { status: 400 })
+	let slug: string | undefined = undefined;
+	if (body.name) {
+		slug = z.string().slugify().parse(body.name);
 	}
-
-	const db = useDatabase()
-
-	// Use service handler to update category (within transaction)
 	const updatedCategory = await db.transaction(async (tx) => {
-		return await updateCategory(tx, id, {
+		if (slug) {
+			const exists = await categoryExistsById(tx, slug);
+			if (exists)
+				throw new ResourceConflictError(
+					`A category with the specified name already exists`,
+				);
+		}
+		return await updateCategory(tx, path.id, {
 			title: body.name,
+			tags: body.tags,
 			description: body.description,
-		})
-	})
-
-	return {
-		success: true,
-		data: updatedCategory,
+			newSlug: slug,
+		});
+	});
+	const queue = useQueue("category");
+	const args: Record<string, any> = { keys: Object.keys(body) };
+	if (slug) {
+		args["newSlug"] = slug;
+		args["oldSlug"] = path.id;
 	}
-})
+	queue.add(`update:${slug ?? path.id}`, args);
+	event.res.status = 202;
+	return updatedCategory;
+});
 
 // Define OpenAPI metadata for this route (top-level function, not passed to defineHandler)
 defineRouteMeta({
 	openAPI: {
-		method: "PATCH",
 		tags: ["Category"],
+		operationId: "updateCategory",
 		summary: "Update category",
 		description: "Update a category by its unique identifier (slug)",
 		parameters: [
@@ -61,9 +78,16 @@ defineRouteMeta({
 				"application/json": {
 					schema: {
 						type: "object",
+						additionalProperties: false,
+						required: ["name,description", "tags"],
 						properties: {
 							name: { type: "string" },
-							description: { type: "string" },
+							description: { type: "string", nullable: true },
+							tags: {
+								type: "array",
+								items: "string",
+								default: [],
+							},
 						},
 					},
 				},
@@ -76,49 +100,51 @@ defineRouteMeta({
 					"application/json": {
 						schema: {
 							type: "object",
+							additionalProperties: false,
+							required: [
+								"slug",
+								"title",
+								"createdAt",
+								"updatedAt",
+							],
 							properties: {
-								success: { type: "boolean" },
-								data: {
-									type: "object",
-									properties: {
-										id: { type: "string" },
-										name: { type: "string" },
-										description: { type: "string" },
-										slug: { type: "string" },
+								slug: {
+									type: "string",
+								},
+								title: {
+									type: "string",
+								},
+								tags: {
+									type: "array",
+									items: {
+										type: "string",
 									},
+									nullable: true,
+								},
+								description: {
+									type: "string",
+									nullable: true,
+								},
+								createdAt: {
+									type: "string",
+									format: "date-time",
+								},
+								updatedAt: {
+									type: "string",
+									format: "date-time",
 								},
 							},
-							required: ["success", "data"],
 						},
 					},
 				},
 			},
 			400: {
-				description: "Invalid category data",
-				content: {
-					"application/json": {
-						schema: {
-							type: "object",
-							properties: {
-								message: { type: "string" },
-							},
-						},
-					},
-				},
+				$ref: "#/components/responses/BadRequestException",
 			},
 			404: {
-				description: "Category not found",
-				content: {
-					"application/json": {
-						schema: {
-							type: "object",
-							properties: {
-								message: { type: "string" },
-							},
-						},
-					},
-				},
+				$ref: "#/components/responses/ResourceNotFoundException",
 			},
+			409: { $ref: "#/components/responses/ConflictException" },
 		},
 	},
-})
+});

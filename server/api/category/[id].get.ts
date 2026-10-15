@@ -1,27 +1,22 @@
-import { useDatabase } from "#server/utils/db.ts"
-import { defineHandler } from "nitro"
-import { z } from "zod"
-import { getCategoryById } from "#server/utils/handlers/category"
+import { useDatabase } from "#server/utils/db.ts";
+import { getCategoryById } from "#server/utils/handlers/category.ts";
+import { validateRouterZod } from "#server/utils/utils.ts";
+import { defineHandler, defineRouteMeta } from "nitro";
+import { z } from "zod";
 
 // Schema for path parameter validation
 const pathSchema = z.object({
 	id: z.string().trim().nonempty("ID is required"),
-})
+});
 
 // GET /api/category/[id] - Get category by ID
 export default defineHandler(async (event) => {
-	const { id } = await event.context.params
-
-	const db = useDatabase()
+	const { id } = await validateRouterZod(event, pathSchema);
+	const db = useDatabase();
 
 	// Use service handler to get category by ID
-	const category = await getCategoryById(db, id)
-
-	return {
-		success: true,
-		data: category,
-	}
-})
+	return await getCategoryById(db, id)
+});
 
 // Define OpenAPI metadata for this route (top-level function, not passed to defineHandler)
 defineRouteMeta({
@@ -78,4 +73,4 @@ defineRouteMeta({
 			},
 		},
 	},
-})
+});

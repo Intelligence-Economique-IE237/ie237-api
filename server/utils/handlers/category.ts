@@ -1,60 +1,58 @@
-import {
-	categories,
-	type Category,
-} from "#server/database/schema.ts";
-import { eq } from "drizzle-orm";
-import { useDatabase, type ConnectionLike } from "../db";
-import { ContentNotFoundError } from "../errors";
+import { categories } from "#server/database/schema.ts";
+import { eq, sql } from "drizzle-orm";
+import { type ConnectionLike } from "../db";
+import { ResourceConflictError, ResourceNotFoundError } from "../errors";
 
 export async function getCategories(
 	tx: ConnectionLike,
 	page: number = 0,
 	size: number = 10,
 ) {
-	const totalRecords = await tx.$executeRaw`select count(*) from ${categories}`
+	const totalRecords = await tx.execute<{ count: number }>(
+		sql`select count(*) from ${categories}`,
+	);
 
 	const allCategories = await tx.query.categories.findMany({
-		orderBy: (fields, { asc }) => asc(fields.title),
+		orderBy: (fields, { desc }) => desc(fields.updatedAt),
 		limit: size,
 		offset: page * size,
-	})
+	});
 
 	return {
 		data: allCategories,
-		totalRecords,
-	}
+		totalRecords: totalRecords.rows[0].count,
+	};
 }
 
-export async function getCategoryById(
-	tx: ConnectionLike,
-	slug: string,
-) {
+export async function getCategoryById(tx: ConnectionLike, slug: string) {
 	const category = await tx.query.categories.findFirst({
-		where: eq(categories.slug, slug),
-	})
+		where: { slug },
+	});
 
 	if (!category) {
-		throw new ContentNotFoundError(slug, "category")
+		throw new ResourceNotFoundError(`Category not found: ${slug}`);
 	}
 
-	return category
+	return category;
 }
 
 export async function createCategory(
 	tx: ConnectionLike,
 	data: {
-		title: string
-		description?: string
-		slug: string
+		title: string;
+		description?: string;
+		slug: string;
 	},
 ) {
 	// Check if category with this slug already exists
 	const existing = await tx.query.categories.findFirst({
-		where: eq(categories.slug, data.slug),
-	})
+		where: { slug: data.slug },
+	});
 
 	if (existing) {
-		throw new Error(`Category with slug "${data.slug}" already exists`)
+		throw new ResourceConflictError(
+			`Category already exists: ${data.slug}`,
+		);
 	}
 
 	const newCategory = await tx
@@ -64,53 +62,52 @@ export async function createCategory(
 			description: data.description,
 			slug: data.slug,
 		})
-		.returning()
+		.returning();
 
-	return newCategory[0]
+	return newCategory[0];
 }
 
 export async function updateCategory(
 	tx: ConnectionLike,
 	slug: string,
 	data: {
-		title?: string
-		description?: string
+		title?: string;
+		tags?: string[];
+		description?: string;
+		newSlug?: string;
 	},
 ) {
 	// Check if category exists
 	const existing = await tx.query.categories.findFirst({
-		where: eq(categories.slug, slug),
-	})
+		where: { slug },
+	});
 
 	if (!existing) {
-		throw new ContentNotFoundError(slug, "category")
+		throw new ResourceNotFoundError(`Category not found: ${slug}`);
 	}
 
-	const updatedCategory = await tx
+	const [updatedCategory] = await tx
 		.update(categories)
 		.set({
+			slug: data.newSlug ?? slug,
 			title: data.title ?? existing.title,
 			description: data.description ?? existing.description,
+			tags: data.tags ?? existing.tags,
 		})
 		.where(eq(categories.slug, slug))
-		.returning()
-
-	return updatedCategory[0]
+		.returning();
+	return updatedCategory;
 }
 
-export async function deleteCategory(
-	tx: ConnectionLike,
-	slug: string,
-) {
-	// Check if category exists
-	const existing = await tx.query.categories.findFirst({
-		where: eq(categories.slug, slug),
-	})
+export async function deleteCategory(tx: ConnectionLike, slug: string) {
+	await tx.delete(categories).where(eq(categories.slug, slug));
+	return { success: true, message: "Category deleted successfully" };
+}
 
-	if (!existing) {
-		throw new ContentNotFoundError(slug, "category")
-	}
+export async function categoryExistsById(tx: ConnectionLike, slug: string) {
+	const result = await tx.execute<{ exists: boolean }>(
+		sql`select exists(select 1 from ${categories} where ${eq(categories.slug, slug)})`,
+	);
 
-	await tx.delete(categories).where(eq(categories.slug, slug))
-	return { success: true, message: "Category deleted successfully" }
+	return result.rows[0].exists;
 }

@@ -31,8 +31,20 @@ export class ContentAttachmentNotFoundError extends ApiError {
 	}
 }
 
-export class ContentNotFoundError extends ApiError {
+export class ResourceConflictError extends ApiError {
 	status = 409;
+}
+export class ResourceNotFoundError extends ApiError {
+	status = 404;
+}
+export class CategoryNotFoundError extends ApiError {
+	status = 404;
+	constructor(readonly slug: string) {
+		super(`Content category does not exist`);
+	}
+}
+export class ContentNotFoundError extends ApiError {
+	status = 404;
 	constructor(readonly contentId: string) {
 		super(`Content does not exist with ID: ${contentId}`);
 	}
